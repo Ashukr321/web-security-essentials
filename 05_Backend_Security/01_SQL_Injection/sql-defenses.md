@@ -1,0 +1,1 @@
+sql-defenses.md (Parameterized queries, ORMs, and Whitelisting)

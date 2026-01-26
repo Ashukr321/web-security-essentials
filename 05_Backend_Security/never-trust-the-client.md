@@ -1,0 +1,1 @@
+never-trust-the-client.md (Server-side validation and permission checks)

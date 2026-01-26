@@ -1,0 +1,1 @@
+cors-policy.md (Cross-Origin Resource Sharing basics)
