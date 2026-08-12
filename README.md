@@ -23,6 +23,24 @@ New here? Start with [why-security-matters](01_Introduction/why-security-matters
 then [security-overview](01_Introduction/security-overview.md) and
 [threat-modeling](01_Introduction/threat-modeling.md).
 
+## 🧠 Threat Modeling
+
+Think like an attacker before they do — the four questions plus a STRIDE pass.
+
+<div align="center">
+<img src="resources/threat-modeling-flow.svg" width="100%" alt="Threat modeling four questions and STRIDE checklist" />
+</div>
+
+## 🧼 Handling Untrusted Input: Validation vs Sanitization vs Escaping
+
+Three distinct defenses, applied at different stages — do not confuse them.
+
+<div align="center">
+<img src="resources/validation.svg" width="100%" alt="Validation: accept or reject input" />
+<img src="resources/sanitization.svg" width="100%" alt="Sanitization: clean dangerous parts of input" />
+<img src="resources/escaping.svg" width="100%" alt="Escaping: context-aware output encoding" />
+</div>
+
 ## 📚 Repository Structure
 
 ```bash

@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 460" font-family="Segoe UI, Arial, sans-serif">
+  <rect width="900" height="460" fill="#0d1117"/>
+  <text x="450" y="38" fill="#e6edf3" font-size="22" font-weight="700" text-anchor="middle">Threat Modeling — Think Like an Attacker First</text>
+
+  <defs>
+    <marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#8b949e"/>
+    </marker>
+  </defs>
+
+  <!-- Four questions loop -->
+  <rect x="40" y="80" width="180" height="70" rx="10" fill="#161b22" stroke="#58a6ff" stroke-width="2"/>
+  <text x="130" y="110" fill="#58a6ff" font-size="14" font-weight="700" text-anchor="middle">1 · What are</text>
+  <text x="130" y="130" fill="#58a6ff" font-size="14" font-weight="700" text-anchor="middle">we building?</text>
+
+  <rect x="260" y="80" width="180" height="70" rx="10" fill="#161b22" stroke="#f78166" stroke-width="2"/>
+  <text x="350" y="110" fill="#f78166" font-size="14" font-weight="700" text-anchor="middle">2 · What can</text>
+  <text x="350" y="130" fill="#f78166" font-size="14" font-weight="700" text-anchor="middle">go wrong?</text>
+
+  <rect x="480" y="80" width="180" height="70" rx="10" fill="#161b22" stroke="#3fb950" stroke-width="2"/>
+  <text x="570" y="110" fill="#3fb950" font-size="14" font-weight="700" text-anchor="middle">3 · What do we</text>
+  <text x="570" y="130" fill="#3fb950" font-size="14" font-weight="700" text-anchor="middle">do about it?</text>
+
+  <rect x="700" y="80" width="180" height="70" rx="10" fill="#161b22" stroke="#d29922" stroke-width="2"/>
+  <text x="790" y="110" fill="#d29922" font-size="14" font-weight="700" text-anchor="middle">4 · Did we do</text>
+  <text x="790" y="130" fill="#d29922" font-size="14" font-weight="700" text-anchor="middle">a good job?</text>
+
+  <line x1="222" y1="115" x2="256" y2="115" stroke="#8b949e" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="442" y1="115" x2="476" y2="115" stroke="#8b949e" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="662" y1="115" x2="696" y2="115" stroke="#8b949e" stroke-width="2" marker-end="url(#a)"/>
+  <!-- feedback loop -->
+  <path d="M790,150 L790,175 L130,175 L130,152" fill="none" stroke="#8b949e" stroke-width="2" stroke-dasharray="5,4" marker-end="url(#a)"/>
+  <text x="460" y="169" fill="#8b949e" font-size="11" text-anchor="middle">iterate as the system changes</text>
+
+  <!-- STRIDE band -->
+  <text x="450" y="215" fill="#e6edf3" font-size="16" font-weight="700" text-anchor="middle">STRIDE — a checklist for "what can go wrong?"</text>
+
+  <g font-size="12">
+    <rect x="40" y="235" width="810" height="34" rx="6" fill="#161b22" stroke="#30363d"/>
+    <text x="55" y="257" fill="#f78166" font-weight="700">S</text><text x="72" y="257" fill="#e6edf3">poofing → Authentication (steal a session cookie)</text>
+
+    <rect x="40" y="273" width="810" height="34" rx="6" fill="#161b22" stroke="#30363d"/>
+    <text x="55" y="295" fill="#f78166" font-weight="700">T</text><text x="72" y="295" fill="#e6edf3">ampering → Integrity (modify a hidden price field)</text>
+
+    <rect x="40" y="311" width="810" height="34" rx="6" fill="#161b22" stroke="#30363d"/>
+    <text x="55" y="333" fill="#f78166" font-weight="700">R</text><text x="72" y="333" fill="#e6edf3">epudiation → Non-repudiation (deny an action, no audit log)</text>
+
+    <rect x="40" y="349" width="810" height="34" rx="6" fill="#161b22" stroke="#30363d"/>
+    <text x="55" y="371" fill="#f78166" font-weight="700">I</text><text x="72" y="371" fill="#e6edf3">nformation Disclosure → Confidentiality (verbose stack traces)</text>
+
+    <rect x="40" y="387" width="395" height="34" rx="6" fill="#161b22" stroke="#30363d"/>
+    <text x="55" y="409" fill="#f78166" font-weight="700">D</text><text x="72" y="409" fill="#e6edf3">enial of Service → Availability</text>
+
+    <rect x="455" y="387" width="395" height="34" rx="6" fill="#161b22" stroke="#30363d"/>
+    <text x="470" y="409" fill="#f78166" font-weight="700">E</text><text x="487" y="409" fill="#e6edf3">levation of Privilege → Authorization</text>
+  </g>
+
+  <text x="450" y="445" fill="#8b949e" font-size="11" text-anchor="middle">Prioritize with  Risk = Likelihood × Impact  — fix high/high first</text>
+</svg>

@@ -4,6 +4,8 @@ Threat modeling is the practice of **thinking like an attacker before they do**.
 Instead of reacting to breaches, you systematically ask: what are we building,
 what can go wrong, and what will we do about it?
 
+![Threat Modeling Flow](../resources/threat-modeling-flow.svg)
+
 ## The Four Questions
 
 Every threat model answers these (Shostack's framework):
