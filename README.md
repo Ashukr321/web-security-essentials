@@ -8,6 +8,22 @@
 **Building Secure Systems for the Modern Web**
 </div>
 
+## 🗺️ Security Zones
+
+Every topic in this repo maps to one of three trust zones — the **frontend**
+(browser), the **transition** (network), and the **backend** (server). Data
+crosses a trust boundary at every arrow, and that is where it must be validated
+and authorized.
+
+<div align="center">
+<img src="resources/web-security-flow.svg" width="100%" alt="Web security three trust zones flow diagram" />
+</div>
+
+New here? Start with [why-security-matters](01_Introduction/why-security-matters.md),
+then [security-overview](01_Introduction/security-overview.md) and
+[threat-modeling](01_Introduction/threat-modeling.md).
+
+## 📚 Repository Structure
 
 ```bash
 ├── 📁 01_Introduction
