@@ -25,6 +25,25 @@ New here? Start with [why-security-matters](01_Introduction/why-security-matters
 then [security-overview](01_Introduction/security-overview.md) and
 [threat-modeling](01_Introduction/threat-modeling.md).
 
+## 🔁 Revision Map
+
+One page to revise the whole repo — all 5 classifications front to back, with
+client-side security expanded into its 5 sub-topics.
+
+<div align="center">
+<img src="resources/revision-map.svg" width="100%" alt="Revision map of all five security classifications with mnemonics" />
+</div>
+
+**Mnemonics** — memorise the phrase, unpack the topics:
+
+| Section | Mnemonic | Unpacks to |
+|---|---|---|
+| 01 · Introduction | **WTO** | **W**hy? · **T**hreat-model · **O**verview |
+| 02 · Client-Side | **eXtra Defense Cuts Pwn Chances** | **X**SS · **D**efense · **C**ookies · **P**rototype Pollution · **C**lickjacking |
+| 03 · In Transition | **Can Cats Wear Cool Hats?** | **C**SRF · **C**ache Deception · **W**ebSockets · **C**ORS · **H**TTPS/HSTS |
+| 04 · Third-Party | **PVA** | **P**in versions · **V**erify integrity (SRI) · **A**udit deps |
+| 05 · Backend | **NTC** | **N**ever **T**rust the **C**lient — validate & enforce server-side |
+
 ## 🧠 Threat Modeling
 
 Think like an attacker before they do — the four questions plus a STRIDE pass.

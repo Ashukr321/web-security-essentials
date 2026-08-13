@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 820" font-family="Segoe UI, Arial, sans-serif">
+  <rect width="1100" height="820" fill="#0d1117"/>
+  <text x="550" y="40" fill="#e6edf3" font-size="24" font-weight="700" text-anchor="middle">Web Security Essentials — Revision Map</text>
+  <text x="550" y="64" fill="#8b949e" font-size="13" text-anchor="middle">5 classifications, front to back — data crosses a trust boundary at every step · mnemonics in yellow</text>
+
+  <defs>
+    <marker id="arr" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#8b949e"/>
+    </marker>
+  </defs>
+
+  <!-- Spine arrows between the 5 sections -->
+  <line x1="550" y1="120" x2="550" y2="150" stroke="#8b949e" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- 01 Introduction -->
+  <rect x="330" y="86" width="440" height="34" rx="8" fill="#161b22" stroke="#58a6ff" stroke-width="2"/>
+  <text x="550" y="104" fill="#58a6ff" font-size="14" font-weight="700" text-anchor="middle">01 · Introduction  —  why security matters · threat modeling · overview</text>
+  <text x="550" y="118" fill="#e3b341" font-size="10.5" font-style="italic" text-anchor="middle">Mnemonic: WTO — Why? · Threat-model · Overview</text>
+
+  <!-- 02 Client-Side Security (expanded) -->
+  <rect x="40" y="150" width="1020" height="230" rx="12" fill="#161b22" stroke="#f78166" stroke-width="2"/>
+  <text x="60" y="178" fill="#f78166" font-size="17" font-weight="700">02 · Client-Side Security  (Browser / Frontend)</text>
+  <text x="1040" y="178" fill="#e3b341" font-size="11.5" font-style="italic" text-anchor="end">Mnemonic: eXtra Defense Cuts Pwn Chances  (XSS·Defense·Cookie·Proto·Click)</text>
+
+  <!-- 5 client-side sub-cards -->
+  <g>
+    <rect x="62" y="196" width="188" height="168" rx="8" fill="#0d1117" stroke="#30363d"/>
+    <text x="156" y="220" fill="#f0883e" font-size="13" font-weight="700" text-anchor="middle">1 · XSS</text>
+    <text x="156" y="244" fill="#e6edf3" font-size="11.5" text-anchor="middle">Reflected</text>
+    <text x="156" y="264" fill="#e6edf3" font-size="11.5" text-anchor="middle">Stored</text>
+    <text x="156" y="284" fill="#e6edf3" font-size="11.5" text-anchor="middle">DOM-based</text>
+    <text x="156" y="312" fill="#8b949e" font-size="10.5" text-anchor="middle">inject &amp; run script</text>
+    <text x="156" y="330" fill="#8b949e" font-size="10.5" text-anchor="middle">in victim's page</text>
+  </g>
+  <g>
+    <rect x="266" y="196" width="188" height="168" rx="8" fill="#0d1117" stroke="#30363d"/>
+    <text x="360" y="220" fill="#f0883e" font-size="13" font-weight="700" text-anchor="middle">2 · Defense</text>
+    <text x="360" y="244" fill="#e6edf3" font-size="11.5" text-anchor="middle">Validate · Sanitize</text>
+    <text x="360" y="264" fill="#e6edf3" font-size="11.5" text-anchor="middle">· Escape</text>
+    <text x="360" y="284" fill="#e6edf3" font-size="11.5" text-anchor="middle">Safe rendering</text>
+    <text x="360" y="304" fill="#e6edf3" font-size="11.5" text-anchor="middle">CSP policy</text>
+    <text x="360" y="332" fill="#8b949e" font-size="10.5" text-anchor="middle">escape at output</text>
+  </g>
+  <g>
+    <rect x="470" y="196" width="188" height="168" rx="8" fill="#0d1117" stroke="#30363d"/>
+    <text x="564" y="220" fill="#f0883e" font-size="13" font-weight="700" text-anchor="middle">3 · Cookies</text>
+    <text x="564" y="244" fill="#e6edf3" font-size="11.5" text-anchor="middle">HttpOnly</text>
+    <text x="564" y="264" fill="#e6edf3" font-size="11.5" text-anchor="middle">Secure</text>
+    <text x="564" y="284" fill="#e6edf3" font-size="11.5" text-anchor="middle">SameSite</text>
+    <text x="564" y="312" fill="#8b949e" font-size="10.5" text-anchor="middle">flags stop JS theft</text>
+    <text x="564" y="330" fill="#8b949e" font-size="10.5" text-anchor="middle">&amp; cross-site sends</text>
+  </g>
+  <g>
+    <rect x="674" y="196" width="188" height="168" rx="8" fill="#0d1117" stroke="#30363d"/>
+    <text x="768" y="220" fill="#f0883e" font-size="13" font-weight="700" text-anchor="middle">4 · Prototype</text>
+    <text x="768" y="238" fill="#f0883e" font-size="13" font-weight="700" text-anchor="middle">Pollution</text>
+    <text x="768" y="266" fill="#e6edf3" font-size="11.5" text-anchor="middle">__proto__ abuse</text>
+    <text x="768" y="286" fill="#e6edf3" font-size="11.5" text-anchor="middle">tampered objects</text>
+    <text x="768" y="314" fill="#8b949e" font-size="10.5" text-anchor="middle">freeze / null-proto</text>
+    <text x="768" y="332" fill="#8b949e" font-size="10.5" text-anchor="middle">guard merges</text>
+  </g>
+  <g>
+    <rect x="878" y="196" width="160" height="168" rx="8" fill="#0d1117" stroke="#30363d"/>
+    <text x="958" y="220" fill="#f0883e" font-size="13" font-weight="700" text-anchor="middle">5 · Click-</text>
+    <text x="958" y="238" fill="#f0883e" font-size="13" font-weight="700" text-anchor="middle">jacking</text>
+    <text x="958" y="266" fill="#e6edf3" font-size="11.5" text-anchor="middle">hidden iframe</text>
+    <text x="958" y="286" fill="#e6edf3" font-size="11.5" text-anchor="middle">UI redress</text>
+    <text x="958" y="314" fill="#8b949e" font-size="10.5" text-anchor="middle">X-Frame-Options</text>
+    <text x="958" y="332" fill="#8b949e" font-size="10.5" text-anchor="middle">frame-ancestors</text>
+  </g>
+
+  <line x1="550" y1="380" x2="550" y2="410" stroke="#8b949e" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- 03 Security in Transition -->
+  <rect x="40" y="410" width="1020" height="120" rx="12" fill="#161b22" stroke="#d29922" stroke-width="2"/>
+  <text x="60" y="438" fill="#d29922" font-size="17" font-weight="700">03 · Security in Transition  (Network / Data in motion)</text>
+  <text x="1040" y="438" fill="#e3b341" font-size="11.5" font-style="italic" text-anchor="end">Mnemonic: Can Cats Wear Cool Hats?  (CSRF·Cache·WebSocket·CORS·HTTPS)</text>
+  <g font-size="11.5" fill="#e6edf3" text-anchor="middle">
+    <rect x="62" y="452" width="188" height="60" rx="8" fill="#0d1117" stroke="#30363d"/>
+    <text x="156" y="478" font-weight="700" fill="#e3b341">CSRF</text>
+    <text x="156" y="498">tokens · SameSite</text>
+    <rect x="266" y="452" width="188" height="60" rx="8" fill="#0d1117" stroke="#30363d"/>
+    <text x="360" y="478" font-weight="700" fill="#e3b341">Cache Deception</text>
+    <text x="360" y="498">path confusion</text>
+    <rect x="470" y="452" width="188" height="60" rx="8" fill="#0d1117" stroke="#30363d"/>
+    <text x="564" y="478" font-weight="700" fill="#e3b341">WebSockets</text>
+    <text x="564" y="498">origin check · CSWSH</text>
+    <rect x="674" y="452" width="188" height="60" rx="8" fill="#0d1117" stroke="#30363d"/>
+    <text x="768" y="478" font-weight="700" fill="#e3b341">CORS</text>
+    <text x="768" y="498">allow-origin rules</text>
+    <rect x="878" y="452" width="160" height="60" rx="8" fill="#0d1117" stroke="#30363d"/>
+    <text x="958" y="478" font-weight="700" fill="#e3b341">HTTPS / HSTS</text>
+    <text x="958" y="498">encrypt · force TLS</text>
+  </g>
+
+  <line x1="550" y1="530" x2="550" y2="560" stroke="#8b949e" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- 04 Third-Party Risks -->
+  <rect x="40" y="560" width="1020" height="58" rx="12" fill="#161b22" stroke="#a371f7" stroke-width="2"/>
+  <text x="60" y="588" fill="#a371f7" font-size="17" font-weight="700">04 · Third-Party Risks</text>
+  <text x="60" y="606" fill="#8b949e" font-size="12">supply-chain attacks — pin versions, verify integrity (SRI), audit dependencies</text>
+  <text x="1040" y="588" fill="#e3b341" font-size="11.5" font-style="italic" text-anchor="end">Mnemonic: PVA — Pin · Verify · Audit</text>
+
+  <line x1="550" y1="618" x2="550" y2="648" stroke="#8b949e" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- 05 Backend Security -->
+  <rect x="40" y="648" width="1020" height="150" rx="12" fill="#161b22" stroke="#3fb950" stroke-width="2"/>
+  <text x="60" y="676" fill="#3fb950" font-size="17" font-weight="700">05 · Backend Security  (Server / Data at rest)</text>
+  <text x="1040" y="676" fill="#e3b341" font-size="11.5" font-style="italic" text-anchor="end">Mnemonic: NTC — Never Trust the Client, enforce server-side</text>
+  <g font-size="11" fill="#e6edf3" text-anchor="middle">
+    <rect x="62"  y="690" width="150" height="44" rx="7" fill="#0d1117" stroke="#30363d"/><text x="137" y="717">SQL / NoSQL Injection</text>
+    <rect x="222" y="690" width="150" height="44" rx="7" fill="#0d1117" stroke="#30363d"/><text x="297" y="717">API Protection · Rate limit</text>
+    <rect x="382" y="690" width="150" height="44" rx="7" fill="#0d1117" stroke="#30363d"/><text x="457" y="710">Data Storage</text><text x="457" y="726" fill="#8b949e">hash · secure store</text>
+    <rect x="542" y="690" width="150" height="44" rx="7" fill="#0d1117" stroke="#30363d"/><text x="617" y="717">Authentication</text>
+    <rect x="702" y="690" width="150" height="44" rx="7" fill="#0d1117" stroke="#30363d"/><text x="777" y="717">SSRF · Path Traversal</text>
+    <rect x="862" y="690" width="176" height="44" rx="7" fill="#0d1117" stroke="#30363d"/><text x="950" y="717">GraphQL · Web LLM</text>
+    <rect x="62"  y="742" width="150" height="44" rx="7" fill="#0d1117" stroke="#30363d"/><text x="137" y="769">Race Conditions</text>
+    <rect x="222" y="742" width="150" height="44" rx="7" fill="#0d1117" stroke="#30363d"/><text x="297" y="769">File Upload</text>
+    <rect x="382" y="742" width="150" height="44" rx="7" fill="#0d1117" stroke="#30363d"/><text x="457" y="769">Server-Side Vulns</text>
+    <rect x="542" y="742" width="150" height="44" rx="7" fill="#0d1117" stroke="#30363d"/><text x="617" y="769">API Testing</text>
+    <rect x="702" y="742" width="336" height="44" rx="7" fill="#0d1117" stroke="#30363d"/><text x="870" y="762" fill="#3fb950" font-weight="700">Error Handling</text><text x="870" y="778" fill="#8b949e">no stack traces / leaks to client</text>
+  </g>
+</svg>
