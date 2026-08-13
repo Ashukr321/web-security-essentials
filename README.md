@@ -58,12 +58,18 @@ Three distinct defenses, applied at different stages — do not confuse them.
 │   │       ├── 📝 csp-policy.md
 │   │       ├── 📝 safe-rendering.md
 │   │       └── 📝 validation-vs-sanitization-vs-escaping.md
-│   └── 📁 03_Cookie_Security
-│       └── 📝 cookie-flags.md
+│   ├── 📁 03_Cookie_Security
+│   │   └── 📝 cookie-flags.md
+│   ├── 🎯 10_Prototype_Pollution
+│   └── 🎯 11_Clickjacking
 ├── 📁 03_Security_In_Transition
 │   ├── 📁 CSRF_Protection
 │   │   ├── 📝 csrf-attacks.md
 │   │   └── 📝 csrf-defenses.md
+│   ├── 🎯 05_CSRF
+│   ├── 🎯 06_Web_Cache_Deception
+│   ├── 🎯 07_WebSockets_Vulnerabilities
+│   ├── 🎯 13_CORS
 │   ├── 📝 cors-policy.md
 │   └── 📝 https-and-hsts.md
 ├── 📁 04_Third_Party_Risks
@@ -78,7 +84,22 @@ Three distinct defenses, applied at different stages — do not confuse them.
 │   ├── 📁 03_Data_Storage
 │   │   ├── 📝 password-hashing.md
 │   │   └── 📝 secure-storage.md
+│   ├── 🎯 01_API_Testing
+│   ├── 🎯 02_Server_Side_Vulnerabilities
+│   ├── 🎯 03_SQL_Injection
+│   ├── 🎯 04_Web_LLM_Attacks
+│   ├── 🎯 08_Authentication_Vulnerabilities
+│   ├── 🎯 09_SSRF
+│   ├── 🎯 12_GraphQL_API_Vulnerabilities
+│   ├── 🎯 14_Path_Traversal
+│   ├── 🎯 15_NoSQL_Injection
+│   ├── 🎯 16_Race_Conditions
+│   ├── 🎯 17_File_Upload_Vulnerabilities
 │   └── 📝 never-trust-the-client.md
 ├── 📄 LICENSE
 └── 📝 README.md
 ```
+
+> 🎯 = hands-on [PortSwigger Web Security Academy](https://portswigger.net/web-security/learning-paths)
+> learning path — each folder has a README with the path link, a progress
+> checklist, and space for notes.
