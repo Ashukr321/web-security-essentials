@@ -51,6 +51,7 @@ Three distinct defenses, applied at different stages — do not confuse them.
 │   ├── 📝 threat-modeling.md
 │   └── 📝 why-security-matters.md
 ├── 📁 02_Client_Side_Security
+│   ├── 📝 README.md
 │   ├── 📁 01_XSS_Vulnerabilities
 │   │   ├── 📝 dom-based-xss.md
 │   │   ├── 📝 reflected-xss.md
