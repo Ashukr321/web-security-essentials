@@ -72,18 +72,24 @@ Three distinct defenses, applied at different stages — do not confuse them.
 ├── 📁 02_Client_Side_Security
 │   ├── 📝 README.md
 │   ├── 📁 01_XSS_Vulnerabilities
+│   │   ├── 📝 cross-site-scripting.md
 │   │   ├── 📝 dom-based-xss.md
 │   │   ├── 📝 reflected-xss.md
 │   │   └── 📝 stored-xss.md
 │   ├── 📁 02_Defense_Mechanisms
-│   │   └── 📁 XSS_Vulnerabilities
-│   │       ├── 📝 csp-policy.md
-│   │       ├── 📝 safe-rendering.md
-│   │       └── 📝 validation-vs-sanitization-vs-escaping.md
+│   │   ├── 📝 csp-policy.md
+│   │   ├── 📝 safe-rendering.md
+│   │   └── 📝 validation-vs-sanitization-vs-escaping.md
 │   ├── 📁 03_Cookie_Security
-│   │   └── 📝 cookie-flags.md
+│   │   ├── 📝 concept.md
+│   │   ├── 📝 cookie-flags.md
+│   │   └── 📝 httpOnly.md
 │   ├── 🎯 04_Prototype_Pollution
-│   └── 🎯 05_Clickjacking
+│   ├── 🎯 05_Clickjacking
+│   ├── 📁 06_Authentication_Security
+│   │   └── 📝 concept.md
+│   └── 📁 07_Token_Storage_Security
+│       └── 📝 concept.md
 ├── 📁 03_Security_In_Transition
 │   ├── 📁 CSRF_Protection
 │   │   ├── 📝 csrf-attacks.md

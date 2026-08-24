@@ -28,6 +28,8 @@ it happens entirely on the victim's device.
 | [03](03_Cookie_Security/) | Cookie Security | `HttpOnly`, `Secure`, `SameSite` — protecting session tokens. |
 | [04](04_Prototype_Pollution/) | Prototype Pollution | Polluting `Object.prototype` in JS to alter app behavior. |
 | [05](05_Clickjacking/) | Clickjacking | UI-redressing attacks that trick users into unintended clicks. |
+| [06](06_Authentication_Security/) | Authentication Security | Sessions, tokens, JWTs, login lifecycles, passkeys, and MFA. |
+| [07](07_Token_Storage_Security/) | Token Storage Security | Comparing localStorage, sessionStorage, cookies, memory, and IndexedDB security. |
 
 ## Scenarios client-side security takes care of
 
