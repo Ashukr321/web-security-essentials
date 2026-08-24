@@ -91,15 +91,19 @@ Three distinct defenses, applied at different stages — do not confuse them.
 │   └── 📁 07_Token_Storage_Security
 │       └── 📝 concept.md
 ├── 📁 03_Security_In_Transition
-│   ├── 📁 CSRF_Protection
+│   ├── 🎯 01_CSRF
+│   │   ├── 📝 README.md
 │   │   ├── 📝 csrf-attacks.md
 │   │   └── 📝 csrf-defenses.md
-│   ├── 🎯 01_CSRF
 │   ├── 🎯 02_Web_Cache_Deception
+│   │   └── 📝 README.md
 │   ├── 🎯 03_WebSockets_Vulnerabilities
+│   │   └── 📝 README.md
 │   ├── 🎯 04_CORS
-│   ├── 📝 cors-policy.md
-│   └── 📝 https-and-hsts.md
+│   │   ├── 📝 README.md
+│   │   └── 📝 cors-policy.md
+│   └── 📁 05_HTTPS_and_HSTS
+│       └── 📝 https-and-hsts.md
 ├── 📁 04_Third_Party_Risks
 │   └── 📝 supply-chain-attacks.md
 ├── 📁 05_Backend_Security
@@ -113,16 +117,27 @@ Three distinct defenses, applied at different stages — do not confuse them.
 │   │   ├── 📝 password-hashing.md
 │   │   └── 📝 secure-storage.md
 │   ├── 🎯 04_API_Testing
+│   │   └── 📝 README.md
 │   ├── 🎯 05_Server_Side_Vulnerabilities
+│   │   └── 📝 README.md
 │   ├── 🎯 06_SQL_Injection
+│   │   └── 📝 README.md
 │   ├── 🎯 07_Web_LLM_Attacks
+│   │   └── 📝 README.md
 │   ├── 🎯 08_Authentication_Vulnerabilities
+│   │   └── 📝 README.md
 │   ├── 🎯 09_SSRF
+│   │   └── 📝 README.md
 │   ├── 🎯 10_GraphQL_API_Vulnerabilities
+│   │   └── 📝 README.md
 │   ├── 🎯 11_Path_Traversal
+│   │   └── 📝 README.md
 │   ├── 🎯 12_NoSQL_Injection
+│   │   └── 📝 README.md
 │   ├── 🎯 13_Race_Conditions
+│   │   └── 📝 README.md
 │   ├── 🎯 14_File_Upload_Vulnerabilities
+│   │   └── 📝 README.md
 │   └── 📝 never-trust-the-client.md
 ├── 📄 LICENSE
 └── 📝 README.md
