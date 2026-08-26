@@ -36,13 +36,20 @@ client-side security expanded into its 5 sub-topics.
 
 **Mnemonics** — memorise the phrase, unpack the topics:
 
-| Section | Mnemonic | Unpacks to |
-|---|---|---|
-| 01 · Introduction | **WTO** | **W**hy? · **T**hreat-model · **O**verview |
-| 02 · Client-Side | **eXtra Defense Cuts Pwn Chances** | **X**SS · **D**efense · **C**ookies · **P**rototype Pollution · **C**lickjacking |
-| 03 · In Transition | **Can Cats Wear Cool Hats?** | **C**SRF · **C**ache Deception · **W**ebSockets · **C**ORS · **H**TTPS/HSTS |
-| 04 · Third-Party | **PVA** | **P**in versions · **V**erify integrity (SRI) · **A**udit deps |
-| 05 · Backend | **NTC** | **N**ever **T**rust the **C**lient — validate & enforce server-side |
+| Section            | Mnemonic                           | Unpacks to                                                                       |
+| ------------------ | ---------------------------------- | -------------------------------------------------------------------------------- |
+| 01 · Introduction  | **WTO**                            | **W**hy? · **T**hreat-model · **O**verview                                       |
+| 02 · Client-Side   | **eXtra Defense Cuts Pwn Chances** | **X**SS · **D**efense · **C**ookies · **P**rototype Pollution · **C**lickjacking |
+| 03 · In Transition | **Can Cats Wear Cool Hats?**       | **C**SRF · **C**ache Deception · **W**ebSockets · **C**ORS · **H**TTPS/HSTS      |
+| 04 · Third-Party   | **PVA**                            | **P**in versions · **V**erify integrity (SRI) · **A**udit deps                   |
+| 05 · Backend       | **NTC**                            | **N**ever **T**rust the **C**lient — validate & enforce server-side              |
+
+## 📑 Web Security Classes Hand Written Notes
+
+Handwritten class notes available for quick revision of web security topics:
+
+- 📄 [Web Security Class Notes - Part 1](resources/classes/web%20sequrity1.pdf)
+- 📄 [Web Security Class Notes - Part 2](resources/classes/web%20sequrity%20-2%20.pdf)
 
 ## 🧠 Threat Modeling
 
