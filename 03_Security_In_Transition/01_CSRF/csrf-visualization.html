@@ -1,0 +1,1100 @@
+<title>CSRF Explained</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700&display=swap">
+
+<style>
+  /* ── Tokens ── */
+  :root {
+    --bg: #f5f2eb;
+    --bg-card: #ffffff;
+    --bg-card-alt: #edeae3;
+    --bg-code: #e8e4dc;
+    --text: #1a1a2e;
+    --text-secondary: #5a6172;
+    --text-muted: #8b92a0;
+    --border: #d5d0c7;
+    --border-subtle: #e5e1d9;
+    --attack: #e84057;
+    --attack-bg: #fde8eb;
+    --attack-glow: rgba(232, 64, 87, 0.15);
+    --defense: #22c9a0;
+    --defense-bg: #e4f8f2;
+    --defense-glow: rgba(34, 201, 160, 0.15);
+    --cookie: #f0a84a;
+    --cookie-bg: #fdf3e0;
+    --cookie-glow: rgba(240, 168, 74, 0.15);
+    --browser: #3b82f6;
+    --browser-bg: #e8f0fe;
+    --browser-glow: rgba(59, 130, 246, 0.12);
+    --hero-gradient: linear-gradient(165deg, #f5f2eb 0%, #ede8df 50%, #e8e4dc 100%);
+    --shadow-sm: 0 1px 3px rgba(26,26,46,0.06);
+    --shadow-md: 0 4px 16px rgba(26,26,46,0.08);
+    --shadow-lg: 0 8px 32px rgba(26,26,46,0.1);
+    --canvas-node-user: #3b82f6;
+    --canvas-node-evil: #e84057;
+    --canvas-node-bank: #22c9a0;
+    --canvas-line: #d5d0c7;
+    --canvas-text: #1a1a2e;
+    --canvas-packet-fill: #f0a84a;
+    --canvas-packet-stroke: #d4912e;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0c1222;
+      --bg-card: #141c30;
+      --bg-card-alt: #1a2340;
+      --bg-code: #111827;
+      --text: #e4e7ed;
+      --text-secondary: #9ca3b4;
+      --text-muted: #64708a;
+      --border: #253050;
+      --border-subtle: #1e2a45;
+      --attack: #f06275;
+      --attack-bg: rgba(240,98,117,0.12);
+      --attack-glow: rgba(240,98,117,0.2);
+      --defense: #3cddb5;
+      --defense-bg: rgba(60,221,181,0.1);
+      --defense-glow: rgba(60,221,181,0.18);
+      --cookie: #f5b863;
+      --cookie-bg: rgba(245,184,99,0.1);
+      --cookie-glow: rgba(245,184,99,0.15);
+      --browser: #60a5fa;
+      --browser-bg: rgba(96,165,250,0.1);
+      --browser-glow: rgba(96,165,250,0.12);
+      --hero-gradient: linear-gradient(165deg, #0c1222 0%, #111b2e 50%, #0f172a 100%);
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.35);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.4);
+      --canvas-node-user: #60a5fa;
+      --canvas-node-evil: #f06275;
+      --canvas-node-bank: #3cddb5;
+      --canvas-line: #253050;
+      --canvas-text: #e4e7ed;
+      --canvas-packet-fill: #f5b863;
+      --canvas-packet-stroke: #d4912e;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0c1222;
+    --bg-card: #141c30;
+    --bg-card-alt: #1a2340;
+    --bg-code: #111827;
+    --text: #e4e7ed;
+    --text-secondary: #9ca3b4;
+    --text-muted: #64708a;
+    --border: #253050;
+    --border-subtle: #1e2a45;
+    --attack: #f06275;
+    --attack-bg: rgba(240,98,117,0.12);
+    --attack-glow: rgba(240,98,117,0.2);
+    --defense: #3cddb5;
+    --defense-bg: rgba(60,221,181,0.1);
+    --defense-glow: rgba(60,221,181,0.18);
+    --cookie: #f5b863;
+    --cookie-bg: rgba(245,184,99,0.1);
+    --cookie-glow: rgba(245,184,99,0.15);
+    --browser: #60a5fa;
+    --browser-bg: rgba(96,165,250,0.1);
+    --browser-glow: rgba(96,165,250,0.12);
+    --hero-gradient: linear-gradient(165deg, #0c1222 0%, #111b2e 50%, #0f172a 100%);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.35);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.4);
+    --canvas-node-user: #60a5fa;
+    --canvas-node-evil: #f06275;
+    --canvas-node-bank: #3cddb5;
+    --canvas-line: #253050;
+    --canvas-text: #e4e7ed;
+    --canvas-packet-fill: #f5b863;
+    --canvas-packet-stroke: #d4912e;
+  }
+
+  /* ── Reset & base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* ── Typography ── */
+  h1, h2, h3 {
+    font-family: 'Space Mono', 'Courier New', monospace;
+    text-wrap: balance;
+    line-height: 1.2;
+  }
+  h1 { font-size: clamp(1.8rem, 4.5vw, 3rem); font-weight: 700; letter-spacing: -0.02em; }
+  h2 { font-size: clamp(1.3rem, 3vw, 1.75rem); font-weight: 700; letter-spacing: -0.01em; }
+  h3 { font-size: 1.05rem; font-weight: 700; }
+
+  .label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  code {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85em;
+    background: var(--bg-code);
+    padding: 0.15em 0.4em;
+    border-radius: 4px;
+  }
+
+  /* ── Layout ── */
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 clamp(1rem, 4vw, 2rem);
+  }
+
+  section {
+    padding: clamp(3rem, 6vw, 5rem) 0;
+  }
+
+  section + section {
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  /* ── Hero ── */
+  .hero {
+    background: var(--hero-gradient);
+    padding: clamp(3rem, 8vw, 5rem) 0 clamp(2rem, 5vw, 3rem);
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+    padding: 0.35rem 0.85rem;
+    background: var(--attack-bg);
+    color: var(--attack);
+    border: 1px solid var(--attack);
+    border-radius: 100px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .hero-eyebrow .dot {
+    width: 6px; height: 6px;
+    background: var(--attack);
+    border-radius: 50%;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.4); }
+  }
+  .hero h1 { margin-bottom: 1rem; }
+  .hero-sub {
+    font-size: clamp(1rem, 2vw, 1.15rem);
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto 2.5rem;
+  }
+
+  /* ── Canvas diagram ── */
+  .diagram-wrap {
+    position: relative;
+    max-width: 720px;
+    margin: 0 auto;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+  }
+  .diagram-wrap canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .diagram-controls {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--border-subtle);
+    background: var(--bg-card-alt);
+  }
+  .diagram-controls button {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 0.4rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .diagram-controls button:hover,
+  .diagram-controls button:focus-visible {
+    border-color: var(--attack);
+    color: var(--attack);
+    background: var(--attack-bg);
+    outline: none;
+  }
+  .diagram-controls button.active {
+    border-color: var(--attack);
+    color: #fff;
+    background: var(--attack);
+  }
+  .step-label {
+    text-align: center;
+    padding: 0.75rem 1rem 0;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    min-height: 2.5rem;
+  }
+
+  /* ── Section titles ── */
+  .section-header {
+    margin-bottom: 2.5rem;
+  }
+  .section-header .label {
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+  .section-header p {
+    color: var(--text-secondary);
+    max-width: 560px;
+    margin-top: 0.5rem;
+  }
+
+  /* ── Anatomy steps ── */
+  .anatomy-grid {
+    display: grid;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .anatomy-step {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 0;
+    background: var(--bg-card);
+    transition: background 0.2s;
+  }
+  .anatomy-step:hover { background: var(--bg-card-alt); }
+  .anatomy-num {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    border-right: 1px solid var(--border);
+    background: var(--bg-card-alt);
+  }
+  .anatomy-content {
+    padding: 1rem 1.25rem;
+  }
+  .anatomy-content h3 {
+    font-size: 0.95rem;
+    margin-bottom: 0.3rem;
+  }
+  .anatomy-content p {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    line-height: 1.55;
+  }
+  .anatomy-step[data-type="danger"] .anatomy-num { color: var(--attack); background: var(--attack-bg); }
+  .anatomy-step[data-type="warning"] .anatomy-num { color: var(--cookie); background: var(--cookie-bg); }
+  .anatomy-step[data-type="info"] .anatomy-num { color: var(--browser); background: var(--browser-bg); }
+
+  /* ── Defense layers ── */
+  .defense-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  .defense-layer {
+    position: relative;
+    padding: 1.25rem 1.5rem 1.25rem 4.5rem;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    transition: all 0.25s;
+  }
+  .defense-layer:first-child { border-radius: 12px 12px 0 0; }
+  .defense-layer:last-child { border-radius: 0 0 12px 12px; }
+  .defense-layer + .defense-layer { border-top: none; }
+  .defense-layer:hover {
+    background: var(--defense-bg);
+    border-color: var(--defense);
+    z-index: 1;
+  }
+  .defense-layer:hover + .defense-layer { border-top-color: var(--defense); }
+  .defense-rank {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--defense);
+    border-right: 1px solid var(--border);
+    background: var(--defense-bg);
+  }
+  .defense-layer h3 {
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+  }
+  .defense-layer p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  .defense-layer code {
+    font-size: 0.78rem;
+  }
+  .defense-coverage {
+    display: inline-block;
+    margin-top: 0.5rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.05em;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    background: var(--defense-bg);
+    color: var(--defense);
+    border: 1px solid currentColor;
+  }
+
+  /* ── Attack vectors ── */
+  .vectors-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  @media (max-width: 600px) { .vectors-grid { grid-template-columns: 1fr; } }
+  .vector-card {
+    padding: 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-card);
+    transition: all 0.25s;
+    cursor: default;
+  }
+  .vector-card:hover {
+    border-color: var(--attack);
+    box-shadow: 0 0 0 1px var(--attack), var(--shadow-md);
+    transform: translateY(-1px);
+  }
+  .vector-card-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    gap: 0.5rem;
+  }
+  .vector-card h3 { font-size: 0.9rem; flex: 1; }
+  .vector-method {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
+  .vector-method.get { background: var(--browser-bg); color: var(--browser); }
+  .vector-method.post { background: var(--attack-bg); color: var(--attack); }
+  .vector-method.any { background: var(--cookie-bg); color: var(--cookie); }
+  .vector-card p {
+    font-size: 0.84rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 0.5rem;
+  }
+  .vector-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+  .vector-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.04em;
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    background: var(--bg-card-alt);
+    color: var(--text-muted);
+    border: 1px solid var(--border-subtle);
+  }
+  .vector-tag.blocked {
+    background: var(--defense-bg);
+    color: var(--defense);
+    border-color: var(--defense);
+  }
+
+  /* ── Interview Q&A ── */
+  .qa-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .qa-item {
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--bg-card);
+  }
+  .qa-item:last-child { border-bottom: none; }
+  .qa-question {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    user-select: none;
+    font-weight: 600;
+    font-size: 0.92rem;
+    transition: background 0.15s;
+    border: none;
+    background: none;
+    color: var(--text);
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+    line-height: 1.4;
+  }
+  .qa-question:hover { background: var(--bg-card-alt); }
+  .qa-question:focus-visible { outline: 2px solid var(--browser); outline-offset: -2px; }
+  .qa-chevron {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.25s;
+    color: var(--text-muted);
+  }
+  .qa-item.open .qa-chevron { transform: rotate(90deg); }
+  .qa-answer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+  .qa-answer-inner {
+    padding: 0 1.25rem 1rem 3rem;
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  /* ── Prereqs ── */
+  .prereqs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-top: 2rem;
+  }
+  @media (max-width: 600px) { .prereqs { grid-template-columns: 1fr; } }
+  .prereq {
+    text-align: center;
+    padding: 1.25rem 1rem;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+  }
+  .prereq-icon {
+    font-family: 'Space Mono', monospace;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+  .prereq h3 {
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+  }
+  .prereq p {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    line-height: 1.45;
+  }
+
+  /* ── Key takeaway ── */
+  .takeaway {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--defense);
+    border-radius: 0 10px 10px 0;
+    padding: 1.5rem 1.75rem;
+    margin-top: 2rem;
+  }
+  .takeaway p {
+    font-size: 0.95rem;
+    line-height: 1.65;
+  }
+  .takeaway strong { color: var(--text); }
+
+  /* ── Utility ── */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+</style>
+
+<!-- ═══════════════ HERO ═══════════════ -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-eyebrow"><span class="dot"></span> THREAT MODEL</div>
+    <h1>Cross-Site Request Forgery</h1>
+    <p class="hero-sub">Your browser sends cookies with every request to a domain — regardless of who triggered it. CSRF exploits that trust.</p>
+
+    <div class="diagram-wrap">
+      <div class="step-label" id="step-label">Click play to see the attack in action</div>
+      <canvas id="attack-canvas" width="1440" height="640"></canvas>
+      <div class="diagram-controls">
+        <button id="btn-play" class="active">&#9654; Play</button>
+        <button id="btn-reset">Reset</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ PREREQUISITES ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">Prerequisites</span>
+      <h2>Three conditions for CSRF</h2>
+      <p>Remove any one and the attack fails.</p>
+    </div>
+
+    <div class="prereqs">
+      <div class="prereq">
+        <span class="prereq-icon" style="color:var(--attack)">!</span>
+        <h3>Relevant action</h3>
+        <p>Something worth exploiting — money transfer, password change, account deletion</p>
+      </div>
+      <div class="prereq">
+        <span class="prereq-icon" style="color:var(--cookie)">~</span>
+        <h3>Cookie-based auth</h3>
+        <p>Server trusts the session cookie alone, with no additional verification</p>
+      </div>
+      <div class="prereq">
+        <span class="prereq-icon" style="color:var(--browser)">?</span>
+        <h3>Predictable params</h3>
+        <p>No random token or header the attacker can't guess or obtain</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ ANATOMY ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">Step by step</span>
+      <h2>Anatomy of the attack</h2>
+    </div>
+
+    <div class="anatomy-grid">
+      <div class="anatomy-step" data-type="info">
+        <div class="anatomy-num">1</div>
+        <div class="anatomy-content">
+          <h3>User logs into bank.com</h3>
+          <p>Browser stores <code>Cookie: session=abc123</code>. This cookie will be sent with every future request to bank.com.</p>
+        </div>
+      </div>
+      <div class="anatomy-step" data-type="danger">
+        <div class="anatomy-num">2</div>
+        <div class="anatomy-content">
+          <h3>User visits evil.com in another tab</h3>
+          <p>A meme site, phishing link, or any page the attacker controls. The bank tab stays open — session is still active.</p>
+        </div>
+      </div>
+      <div class="anatomy-step" data-type="danger">
+        <div class="anatomy-num">3</div>
+        <div class="anatomy-content">
+          <h3>evil.com contains a hidden form</h3>
+          <p><code>&lt;form action="bank.com/transfer" method="POST"&gt;</code> with attacker-chosen values. A script auto-submits it on page load.</p>
+        </div>
+      </div>
+      <div class="anatomy-step" data-type="warning">
+        <div class="anatomy-num">4</div>
+        <div class="anatomy-content">
+          <h3>Browser sends the POST — with cookies attached</h3>
+          <p>The request goes to bank.com, so the browser automatically includes bank.com's session cookie. This is browser behavior by design.</p>
+        </div>
+      </div>
+      <div class="anatomy-step" data-type="danger">
+        <div class="anatomy-num">5</div>
+        <div class="anatomy-content">
+          <h3>Bank processes the forged request</h3>
+          <p>Valid session cookie → valid user. The bank can't distinguish this from a real transfer. The user never clicked anything.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ DEFENSES ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">Defense layers</span>
+      <h2>How to stop CSRF</h2>
+      <p>Each layer catches what the one above misses. Stack them.</p>
+    </div>
+
+    <div class="defense-stack">
+      <div class="defense-layer">
+        <div class="defense-rank">L1</div>
+        <h3>SameSite=Lax cookies</h3>
+        <p>Browser won't send cookies on cross-site form POSTs, fetch, or iframes. Default in modern browsers — zero code needed.</p>
+        <code>Set-Cookie: session=abc; SameSite=Lax; Secure; HttpOnly</code>
+        <br><span class="defense-coverage">STOPS ~90% OF CSRF</span>
+      </div>
+      <div class="defense-layer">
+        <div class="defense-rank">L2</div>
+        <h3>CSRF tokens</h3>
+        <p>Server embeds a random token in each form. Attacker can't read it (Same-Origin Policy) so they can't forge a valid submission.</p>
+        <code>&lt;input type="hidden" name="_csrf" value="random-xyz"&gt;</code>
+        <br><span class="defense-coverage">CATCHES THE REST</span>
+      </div>
+      <div class="defense-layer">
+        <div class="defense-rank">L3</div>
+        <h3>Origin / Referer validation</h3>
+        <p>Server checks the <code>Origin</code> header — a cross-site request reveals the attacker's domain. Fallback to <code>Referer</code>.</p>
+        <code>if (origin !== 'https://bank.com') reject()</code>
+        <br><span class="defense-coverage">DEFENSE IN DEPTH</span>
+      </div>
+      <div class="defense-layer">
+        <div class="defense-rank">L4</div>
+        <h3>Re-authentication</h3>
+        <p>For critical actions, require the user to enter their password again. Attacker can trigger the request but can't supply credentials.</p>
+        <span class="defense-coverage">LIMITS BLAST RADIUS</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ VECTORS ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">Attack surface</span>
+      <h2>Common attack vectors</h2>
+    </div>
+
+    <div class="vectors-grid">
+      <div class="vector-card">
+        <div class="vector-card-header">
+          <h3>Hidden form auto-submit</h3>
+          <span class="vector-method post">POST</span>
+        </div>
+        <p>Page with a hidden form that auto-submits on load via <code>onload</code>. The classic CSRF payload.</p>
+        <div class="vector-tags">
+          <span class="vector-tag">Needs JS</span>
+          <span class="vector-tag blocked">Blocked by Lax</span>
+        </div>
+      </div>
+
+      <div class="vector-card">
+        <div class="vector-card-header">
+          <h3>Image tag GET</h3>
+          <span class="vector-method get">GET</span>
+        </div>
+        <p>An <code>&lt;img src="bank.com/do?..."&gt;</code> triggers a GET with cookies. Works in emails and forums — no JS needed.</p>
+        <div class="vector-tags">
+          <span class="vector-tag">No JS</span>
+          <span class="vector-tag">Bypasses Lax</span>
+        </div>
+      </div>
+
+      <div class="vector-card">
+        <div class="vector-card-header">
+          <h3>JSON body trick</h3>
+          <span class="vector-method post">POST</span>
+        </div>
+        <p>Form with <code>enctype="text/plain"</code> crafts a valid JSON body. Works if the server doesn't check Content-Type.</p>
+        <div class="vector-tags">
+          <span class="vector-tag">Needs JS</span>
+          <span class="vector-tag blocked">Blocked by Lax</span>
+        </div>
+      </div>
+
+      <div class="vector-card">
+        <div class="vector-card-header">
+          <h3>Login CSRF</h3>
+          <span class="vector-method post">POST</span>
+        </div>
+        <p>Logs victim into the attacker's account. Victim enters personal data — it's saved to the attacker's profile.</p>
+        <div class="vector-tags">
+          <span class="vector-tag">Often unprotected</span>
+          <span class="vector-tag blocked">Blocked by Lax</span>
+        </div>
+      </div>
+
+      <div class="vector-card">
+        <div class="vector-card-header">
+          <h3>Clickjacking combo</h3>
+          <span class="vector-method any">ANY</span>
+        </div>
+        <p>Hidden iframe over a decoy button. User "voluntarily" clicks the real action. Bypasses some token defenses.</p>
+        <div class="vector-tags">
+          <span class="vector-tag">No JS</span>
+          <span class="vector-tag blocked">Blocked by X-Frame-Options</span>
+        </div>
+      </div>
+
+      <div class="vector-card">
+        <div class="vector-card-header">
+          <h3>Stored CSRF</h3>
+          <span class="vector-method get">GET</span>
+        </div>
+        <p>Injected <code>&lt;img&gt;</code> in a forum post fires for every viewer. Mass exploitation from a single payload.</p>
+        <div class="vector-tags">
+          <span class="vector-tag">No JS</span>
+          <span class="vector-tag">Bypasses Lax</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ INTERVIEW Q&A ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">Interview prep</span>
+      <h2>Quick-fire questions</h2>
+    </div>
+
+    <div class="qa-list" id="qa-list">
+      <div class="qa-item">
+        <button class="qa-question">
+          <span class="qa-chevron"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          What is CSRF in one sentence?
+        </button>
+        <div class="qa-answer"><div class="qa-answer-inner">An attacker's site tricks the victim's browser into making an authenticated request to a site where the victim is already logged in. The attacker never sees the cookie — the browser attaches it automatically.</div></div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-question">
+          <span class="qa-chevron"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          Can the attacker read the response?
+        </button>
+        <div class="qa-answer"><div class="qa-answer-inner">No. The Same-Origin Policy blocks cross-origin reads. CSRF is a <strong>write-only</strong> attack — the attacker can trigger actions but can't steal data directly. They can transfer money but can't check the balance.</div></div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-question">
+          <span class="qa-chevron"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          Why can't the attacker steal the CSRF token?
+        </button>
+        <div class="qa-answer"><div class="qa-answer-inner">Same-Origin Policy prevents cross-origin reads. The attacker can make the browser <em>send</em> a request to bank.com, but they can't <em>read</em> bank.com's pages or DOM. The token is embedded in the HTML that only same-origin code can access.</div></div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-question">
+          <span class="qa-chevron"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          Does Content-Type: application/json prevent CSRF?
+        </button>
+        <div class="qa-answer"><div class="qa-answer-inner">Mostly, yes. A <code>Content-Type: application/json</code> header is not a "simple" header, so it triggers a CORS preflight (OPTIONS request). If the server's CORS config doesn't allow the attacker's origin, the browser blocks the request entirely. But the server must also <em>reject</em> requests with wrong Content-Type — some servers parse any body as JSON regardless.</div></div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-question">
+          <span class="qa-chevron"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          CSRF vs XSS — what's the difference?
+        </button>
+        <div class="qa-answer"><div class="qa-answer-inner"><strong>XSS</strong> injects and executes code in the victim's browser — it can read the page, steal tokens, and do anything the user can. <strong>CSRF</strong> forges a request from outside — it can trigger actions but can't read responses or access the page. XSS is strictly more powerful: it can bypass CSRF tokens because it runs inside the origin.</div></div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-question">
+          <span class="qa-chevron"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          What's the best single defense today?
+        </button>
+        <div class="qa-answer"><div class="qa-answer-inner"><code>SameSite=Lax</code> cookies. It's the default in modern browsers, requires zero application code, and blocks cross-site form POSTs, fetch, and iframe-based requests. Layer CSRF tokens on top for legacy browser coverage and defense in depth.</div></div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-question">
+          <span class="qa-chevron"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          What is login CSRF and why does it matter?
+        </button>
+        <div class="qa-answer"><div class="qa-answer-inner">The attacker logs the victim into the <em>attacker's</em> account. The victim doesn't notice, enters personal data (credit card, address), and it's saved to the attacker's profile. It matters because login forms are often unprotected — "there's no session to protect yet." Fix: CSRF tokens on login forms too.</div></div>
+      </div>
+    </div>
+
+    <div class="takeaway">
+      <p><strong>Key takeaway:</strong> CSRF works because browsers automatically attach cookies to every request — regardless of who initiated it. The fix: make the server require something the attacker can't provide. <code>SameSite=Lax</code> kills most CSRF out of the box. Layer CSRF tokens and Origin validation for complete coverage.</p>
+    </div>
+  </div>
+</section>
+
+<script>
+// ── Q&A Accordion ──
+document.getElementById('qa-list').addEventListener('click', e => {
+  const btn = e.target.closest('.qa-question');
+  if (!btn) return;
+  const item = btn.parentElement;
+  const answer = item.querySelector('.qa-answer');
+  const inner = answer.querySelector('.qa-answer-inner');
+  const isOpen = item.classList.contains('open');
+
+  // Close all
+  document.querySelectorAll('.qa-item.open').forEach(el => {
+    el.classList.remove('open');
+    el.querySelector('.qa-answer').style.maxHeight = '0';
+  });
+
+  if (!isOpen) {
+    item.classList.add('open');
+    answer.style.maxHeight = inner.scrollHeight + 'px';
+  }
+});
+
+// ── Canvas attack animation ──
+const canvas = document.getElementById('attack-canvas');
+const ctx = canvas.getContext('2d');
+const dpr = Math.min(window.devicePixelRatio || 1, 2);
+const W = 640, H = 300;
+canvas.width = W * dpr;
+canvas.height = H * dpr;
+canvas.style.width = '100%';
+canvas.style.height = 'auto';
+canvas.style.aspectRatio = W + '/' + H;
+ctx.scale(dpr, dpr);
+
+const stepLabel = document.getElementById('step-label');
+const btnPlay = document.getElementById('btn-play');
+const btnReset = document.getElementById('btn-reset');
+
+// Resolve CSS vars
+function getCSSVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+const nodes = [
+  { id: 'user', x: 100, y: 145, label: 'You', sub: '(logged in)' },
+  { id: 'evil', x: 320, y: 60, label: 'evil.com', sub: '(attacker)' },
+  { id: 'bank', x: 540, y: 145, label: 'bank.com', sub: '(your bank)' },
+  { id: 'browser', x: 220, y: 235, label: 'Browser', sub: '(cookies)' },
+];
+
+const steps = [
+  { msg: 'You log into bank.com — browser stores session cookie', from: 'bank', to: 'browser', color: () => getCSSVar('--canvas-node-bank'), active: ['user','bank','browser'] },
+  { msg: 'You visit evil.com in another tab', from: 'user', to: 'evil', color: () => getCSSVar('--canvas-node-evil'), active: ['user','evil'] },
+  { msg: 'evil.com has a hidden form that auto-submits to bank.com', from: 'evil', to: 'browser', color: () => getCSSVar('--canvas-node-evil'), active: ['evil','browser'] },
+  { msg: 'Browser sends POST to bank.com — with your session cookie attached', from: 'browser', to: 'bank', color: () => getCSSVar('--canvas-packet-fill'), active: ['browser','bank'] },
+  { msg: 'bank.com sees valid cookie → processes the transfer. You never knew.', from: 'bank', to: 'bank', color: () => getCSSVar('--canvas-node-evil'), active: ['bank'] },
+];
+
+let currentStep = -1;
+let animProgress = 0;
+let animating = false;
+let animFrame = null;
+
+function getNode(id) { return nodes.find(n => n.id === id); }
+
+function drawNode(n, highlight) {
+  const colors = {
+    user: getCSSVar('--canvas-node-user'),
+    evil: getCSSVar('--canvas-node-evil'),
+    bank: getCSSVar('--canvas-node-bank'),
+    browser: getCSSVar('--canvas-packet-fill'),
+  };
+  const c = colors[n.id] || getCSSVar('--canvas-text');
+  const r = 30;
+
+  ctx.save();
+  if (highlight) {
+    ctx.shadowColor = c;
+    ctx.shadowBlur = 18;
+  }
+  ctx.beginPath();
+  ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+  ctx.fillStyle = highlight ? c : 'transparent';
+  ctx.fill();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = c;
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.fillStyle = highlight ? (isLightColor(c) ? '#000' : '#fff') : getCSSVar('--canvas-text');
+  ctx.font = '700 12px "Space Mono", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(n.label, n.x, n.y + 4);
+
+  ctx.fillStyle = getCSSVar('--text-muted');
+  ctx.font = '400 10px "DM Sans", sans-serif';
+  ctx.fillText(n.sub, n.x, n.y + r + 16);
+}
+
+function isLightColor(hex) {
+  const c = hex.replace('#','');
+  if (c.length < 6) return true;
+  const r = parseInt(c.substr(0,2),16), g = parseInt(c.substr(2,2),16), b = parseInt(c.substr(4,2),16);
+  return (r*299 + g*587 + b*114) / 1000 > 160;
+}
+
+function drawPacket(fromN, toN, t, color) {
+  if (fromN.id === toN.id) return; // self-loop — skip packet
+  const x = fromN.x + (toN.x - fromN.x) * t;
+  const y = fromN.y + (toN.y - fromN.y) * t;
+  const sz = 8;
+
+  ctx.save();
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 12;
+  ctx.beginPath();
+  ctx.arc(x, y, sz, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.restore();
+
+  // trail
+  for (let i = 1; i <= 4; i++) {
+    const tt = Math.max(0, t - i * 0.04);
+    const tx = fromN.x + (toN.x - fromN.x) * tt;
+    const ty = fromN.y + (toN.y - fromN.y) * tt;
+    ctx.beginPath();
+    ctx.arc(tx, ty, sz * (1 - i * 0.2), 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.3 - i * 0.06;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+}
+
+function drawLine(a, b, dashed) {
+  ctx.save();
+  ctx.strokeStyle = getCSSVar('--canvas-line');
+  ctx.lineWidth = 1;
+  if (dashed) ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(a.x, a.y);
+  ctx.lineTo(b.x, b.y);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function render() {
+  ctx.clearRect(0, 0, W, H);
+
+  // lines
+  const pairs = [['user','evil'],['evil','browser'],['browser','bank'],['user','bank']];
+  pairs.forEach(([a,b]) => drawLine(getNode(a), getNode(b), true));
+
+  const step = currentStep >= 0 && currentStep < steps.length ? steps[currentStep] : null;
+  const activeSet = step ? new Set(step.active) : new Set();
+
+  // nodes
+  nodes.forEach(n => drawNode(n, activeSet.has(n.id)));
+
+  // animated packet
+  if (step && animating && step.from !== step.to) {
+    drawPacket(getNode(step.from), getNode(step.to), animProgress, step.color());
+  }
+
+  // flash on final step
+  if (step && currentStep === steps.length - 1 && !animating) {
+    const bankN = getNode('bank');
+    ctx.save();
+    const pulse = (Math.sin(performance.now() / 300) + 1) / 2;
+    ctx.globalAlpha = 0.15 + pulse * 0.15;
+    ctx.beginPath();
+    ctx.arc(bankN.x, bankN.y, 50, 0, Math.PI * 2);
+    ctx.fillStyle = getCSSVar('--canvas-node-evil');
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+function animateStep() {
+  if (!animating) return;
+  animProgress += 0.018;
+  if (animProgress >= 1) {
+    animProgress = 1;
+    animating = false;
+    render();
+    // auto-advance
+    setTimeout(() => {
+      if (currentStep < steps.length - 1) {
+        currentStep++;
+        stepLabel.textContent = `Step ${currentStep + 1}: ${steps[currentStep].msg}`;
+        animProgress = 0;
+        animating = true;
+        animFrame = requestAnimationFrame(tick);
+      }
+    }, 800);
+    return;
+  }
+  render();
+  animFrame = requestAnimationFrame(tick);
+}
+
+function tick() {
+  animateStep();
+  // keep final step pulsing
+  if (!animating && currentStep === steps.length - 1) {
+    render();
+    animFrame = requestAnimationFrame(tick);
+  }
+}
+
+function startPlay() {
+  currentStep = 0;
+  animProgress = 0;
+  animating = true;
+  stepLabel.textContent = `Step 1: ${steps[0].msg}`;
+  btnPlay.classList.add('active');
+  animFrame = requestAnimationFrame(tick);
+}
+
+function resetAnim() {
+  cancelAnimationFrame(animFrame);
+  currentStep = -1;
+  animProgress = 0;
+  animating = false;
+  stepLabel.textContent = 'Click play to see the attack in action';
+  btnPlay.classList.remove('active');
+  render();
+}
+
+btnPlay.addEventListener('click', () => {
+  resetAnim();
+  startPlay();
+});
+btnReset.addEventListener('click', resetAnim);
+
+// Initial render + auto-play
+render();
+setTimeout(startPlay, 600);
+
+// Re-render on theme change
+const observer = new MutationObserver(() => render());
+observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => render());
+</script>

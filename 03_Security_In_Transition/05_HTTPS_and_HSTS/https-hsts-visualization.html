@@ -1,0 +1,719 @@
+<title>HTTPS & HSTS Explained</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700&display=swap">
+
+<style>
+  :root {
+    --bg: #f5f2eb;
+    --bg-card: #ffffff;
+    --bg-card-alt: #edeae3;
+    --bg-code: #e8e4dc;
+    --text: #1a1a2e;
+    --text-secondary: #5a6172;
+    --text-muted: #8b92a0;
+    --border: #d5d0c7;
+    --border-subtle: #e5e1d9;
+    --accent: #059669;
+    --accent-bg: #ecfdf5;
+    --accent-glow: rgba(5,150,105,0.15);
+    --attack: #e84057;
+    --attack-bg: #fde8eb;
+    --defense: #22c9a0;
+    --defense-bg: #e4f8f2;
+    --warn: #f0a84a;
+    --warn-bg: #fdf3e0;
+    --browser: #3b82f6;
+    --browser-bg: #e8f0fe;
+    --lock: #059669;
+    --lock-bg: #ecfdf5;
+    --hero-gradient: linear-gradient(165deg, #f5f2eb 0%, #ede8df 50%, #e8e4dc 100%);
+    --shadow-sm: 0 1px 3px rgba(26,26,46,0.06);
+    --shadow-md: 0 4px 16px rgba(26,26,46,0.08);
+    --canvas-client: #3b82f6;
+    --canvas-attacker: #e84057;
+    --canvas-server: #059669;
+    --canvas-line: #d5d0c7;
+    --canvas-text: #1a1a2e;
+    --canvas-packet: #f0a84a;
+    --canvas-encrypted: #059669;
+    --canvas-plaintext: #e84057;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0c1222; --bg-card: #141c30; --bg-card-alt: #1a2340; --bg-code: #111827;
+      --text: #e4e7ed; --text-secondary: #9ca3b4; --text-muted: #64708a;
+      --border: #253050; --border-subtle: #1e2a45;
+      --accent: #34d399; --accent-bg: rgba(52,211,153,0.1); --accent-glow: rgba(52,211,153,0.18);
+      --attack: #f06275; --attack-bg: rgba(240,98,117,0.12);
+      --defense: #3cddb5; --defense-bg: rgba(60,221,181,0.1);
+      --warn: #f5b863; --warn-bg: rgba(245,184,99,0.1);
+      --browser: #60a5fa; --browser-bg: rgba(96,165,250,0.1);
+      --lock: #34d399; --lock-bg: rgba(52,211,153,0.1);
+      --hero-gradient: linear-gradient(165deg, #0c1222 0%, #111b2e 50%, #0f172a 100%);
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.3); --shadow-md: 0 4px 16px rgba(0,0,0,0.35);
+      --canvas-client: #60a5fa; --canvas-attacker: #f06275; --canvas-server: #34d399;
+      --canvas-line: #253050; --canvas-text: #e4e7ed; --canvas-packet: #f5b863;
+      --canvas-encrypted: #34d399; --canvas-plaintext: #f06275;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0c1222; --bg-card: #141c30; --bg-card-alt: #1a2340; --bg-code: #111827;
+    --text: #e4e7ed; --text-secondary: #9ca3b4; --text-muted: #64708a;
+    --border: #253050; --border-subtle: #1e2a45;
+    --accent: #34d399; --accent-bg: rgba(52,211,153,0.1); --accent-glow: rgba(52,211,153,0.18);
+    --attack: #f06275; --attack-bg: rgba(240,98,117,0.12);
+    --defense: #3cddb5; --defense-bg: rgba(60,221,181,0.1);
+    --warn: #f5b863; --warn-bg: rgba(245,184,99,0.1);
+    --browser: #60a5fa; --browser-bg: rgba(96,165,250,0.1);
+    --lock: #34d399; --lock-bg: rgba(52,211,153,0.1);
+    --hero-gradient: linear-gradient(165deg, #0c1222 0%, #111b2e 50%, #0f172a 100%);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.3); --shadow-md: 0 4px 16px rgba(0,0,0,0.35);
+    --canvas-client: #60a5fa; --canvas-attacker: #f06275; --canvas-server: #34d399;
+    --canvas-line: #253050; --canvas-text: #e4e7ed; --canvas-packet: #f5b863;
+    --canvas-encrypted: #34d399; --canvas-plaintext: #f06275;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 16px; line-height: 1.65;
+    -webkit-font-smoothing: antialiased; overflow-x: hidden;
+  }
+  h1, h2, h3 { font-family: 'Space Mono', monospace; text-wrap: balance; line-height: 1.2; }
+  h1 { font-size: clamp(1.8rem,4.5vw,3rem); font-weight: 700; letter-spacing: -0.02em; }
+  h2 { font-size: clamp(1.3rem,3vw,1.75rem); font-weight: 700; letter-spacing: -0.01em; }
+  h3 { font-size: 1.05rem; font-weight: 700; }
+  .label { font-family: 'Space Mono', monospace; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); }
+  code { font-family: 'Space Mono', monospace; font-size: 0.85em; background: var(--bg-code); padding: 0.15em 0.4em; border-radius: 4px; }
+  .container { max-width: 960px; margin: 0 auto; padding: 0 clamp(1rem,4vw,2rem); }
+  section { padding: clamp(3rem,6vw,5rem) 0; }
+  section + section { border-top: 1px solid var(--border-subtle); }
+
+  /* Hero */
+  .hero { background: var(--hero-gradient); padding: clamp(3rem,8vw,5rem) 0 clamp(2rem,5vw,3rem); text-align: center; border-bottom: 1px solid var(--border); }
+  .hero-eyebrow { display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 1.25rem; padding: 0.35rem 0.85rem; background: var(--lock-bg); color: var(--lock); border: 1px solid var(--lock); border-radius: 100px; font-family: 'Space Mono', monospace; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+  .hero-eyebrow .dot { width: 6px; height: 6px; background: var(--lock); border-radius: 50%; animation: pulse-dot 2s ease-in-out infinite; }
+  @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.4)} }
+  .hero h1 { margin-bottom: 1rem; }
+  .hero-sub { font-size: clamp(1rem,2vw,1.15rem); color: var(--text-secondary); max-width: 640px; margin: 0 auto 2.5rem; }
+
+  /* Canvas */
+  .diagram-wrap { position: relative; max-width: 720px; margin: 0 auto; border-radius: 12px; overflow: hidden; background: var(--bg-card); border: 1px solid var(--border); box-shadow: var(--shadow-md); }
+  .diagram-wrap canvas { display: block; width: 100%; height: auto; }
+  .diagram-controls { display: flex; justify-content: center; gap: 0.5rem; padding: 0.75rem 1rem; border-top: 1px solid var(--border-subtle); background: var(--bg-card-alt); flex-wrap: wrap; }
+  .diagram-controls button { font-family: 'Space Mono', monospace; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; padding: 0.4rem 1rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-card); color: var(--text-secondary); cursor: pointer; transition: all 0.2s; }
+  .diagram-controls button:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+  .diagram-controls button.active { border-color: var(--accent); color: #fff; background: var(--accent); }
+  .step-label { text-align: center; padding: 0.75rem 1rem 0; font-family: 'Space Mono', monospace; font-size: 0.78rem; color: var(--text-secondary); min-height: 2.8rem; line-height: 1.4; }
+
+  /* Section header */
+  .section-header { margin-bottom: 2.5rem; }
+  .section-header .label { margin-bottom: 0.5rem; display: block; }
+  .section-header p { color: var(--text-secondary); max-width: 560px; margin-top: 0.5rem; }
+
+  /* Anatomy */
+  .anatomy-grid { display: grid; gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .anatomy-step { display: grid; grid-template-columns: 56px 1fr; background: var(--bg-card); transition: background 0.2s; }
+  .anatomy-step:hover { background: var(--bg-card-alt); }
+  .anatomy-num { display: flex; align-items: center; justify-content: center; font-family: 'Space Mono', monospace; font-size: 0.85rem; font-weight: 700; color: var(--text-muted); border-right: 1px solid var(--border); background: var(--bg-card-alt); }
+  .anatomy-content { padding: 1rem 1.25rem; }
+  .anatomy-content h3 { font-size: 0.95rem; margin-bottom: 0.3rem; }
+  .anatomy-content p { font-size: 0.88rem; color: var(--text-secondary); line-height: 1.55; }
+  .anatomy-step[data-type="danger"] .anatomy-num { color: var(--attack); background: var(--attack-bg); }
+  .anatomy-step[data-type="success"] .anatomy-num { color: var(--defense); background: var(--defense-bg); }
+  .anatomy-step[data-type="info"] .anatomy-num { color: var(--browser); background: var(--browser-bg); }
+  .anatomy-step[data-type="warn"] .anatomy-num { color: var(--warn); background: var(--warn-bg); }
+  .anatomy-step[data-type="lock"] .anatomy-num { color: var(--lock); background: var(--lock-bg); }
+
+  /* Comparison cards */
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 600px) { .compare-grid { grid-template-columns: 1fr; } }
+  .compare-card { padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-card); }
+  .compare-card h3 { font-size: 0.95rem; margin-bottom: 0.75rem; padding-bottom: 0.5rem; }
+  .compare-card.http h3 { border-bottom: 2px solid var(--attack); }
+  .compare-card.https h3 { border-bottom: 2px solid var(--accent); }
+  .compare-card ul { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+  .compare-card li { font-size: 0.84rem; color: var(--text-secondary); line-height: 1.45; padding-left: 1.5rem; position: relative; }
+  .compare-card.http li::before { content: '✗'; position: absolute; left: 0; color: var(--attack); font-weight: 700; }
+  .compare-card.https li::before { content: '✓'; position: absolute; left: 0; color: var(--accent); font-weight: 700; }
+
+  /* HSTS timeline */
+  .timeline { position: relative; max-width: 640px; margin: 0 auto; padding-left: 2rem; }
+  .timeline::before { content: ''; position: absolute; left: 0.6rem; top: 0; bottom: 0; width: 2px; background: var(--border); }
+  .timeline-item { position: relative; padding: 0 0 2rem 1.5rem; }
+  .timeline-item:last-child { padding-bottom: 0; }
+  .timeline-dot { position: absolute; left: -1.55rem; top: 0.25rem; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--border); background: var(--bg-card); }
+  .timeline-item[data-type="danger"] .timeline-dot { border-color: var(--attack); background: var(--attack-bg); }
+  .timeline-item[data-type="success"] .timeline-dot { border-color: var(--accent); background: var(--accent-bg); }
+  .timeline-item[data-type="info"] .timeline-dot { border-color: var(--browser); background: var(--browser-bg); }
+  .timeline-item h3 { font-size: 0.9rem; margin-bottom: 0.25rem; }
+  .timeline-item p { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; }
+
+  /* Defense layers */
+  .defense-stack { display: flex; flex-direction: column; max-width: 640px; margin: 0 auto; }
+  .defense-layer { position: relative; padding: 1.25rem 1.5rem 1.25rem 4.5rem; border: 1px solid var(--border); background: var(--bg-card); transition: all 0.25s; }
+  .defense-layer:first-child { border-radius: 12px 12px 0 0; }
+  .defense-layer:last-child { border-radius: 0 0 12px 12px; }
+  .defense-layer + .defense-layer { border-top: none; }
+  .defense-layer:hover { background: var(--defense-bg); border-color: var(--defense); z-index: 1; }
+  .defense-layer:hover + .defense-layer { border-top-color: var(--defense); }
+  .defense-rank { position: absolute; left: 0; top: 0; bottom: 0; width: 3.5rem; display: flex; align-items: center; justify-content: center; font-family: 'Space Mono', monospace; font-size: 0.75rem; font-weight: 700; color: var(--defense); border-right: 1px solid var(--border); background: var(--defense-bg); }
+  .defense-layer h3 { font-size: 0.95rem; margin-bottom: 0.25rem; }
+  .defense-layer p { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; }
+  .defense-layer code { font-size: 0.78rem; }
+
+  /* Vulnerability cards */
+  .vuln-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 1rem; }
+  @media (max-width: 600px) { .vuln-grid { grid-template-columns: 1fr; } }
+  .vuln-card { padding: 1.25rem; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-card); border-left: 3px solid var(--attack); transition: all 0.25s; }
+  .vuln-card:hover { border-color: var(--attack); box-shadow: 0 0 0 1px var(--attack), var(--shadow-md); transform: translateY(-1px); }
+  .vuln-card h3 { font-size: 0.9rem; margin-bottom: 0.4rem; }
+  .vuln-card p { font-size: 0.84rem; color: var(--text-secondary); line-height: 1.5; }
+
+  /* Q&A */
+  .qa-list { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .qa-item { border-bottom: 1px solid var(--border-subtle); background: var(--bg-card); }
+  .qa-item:last-child { border-bottom: none; }
+  .qa-question { display: flex; align-items: center; gap: 0.75rem; padding: 1rem 1.25rem; cursor: pointer; user-select: none; font-weight: 600; font-size: 0.92rem; transition: background 0.15s; border: none; background: none; color: var(--text); width: 100%; text-align: left; font-family: inherit; line-height: 1.4; }
+  .qa-question:hover { background: var(--bg-card-alt); }
+  .qa-chevron { flex-shrink: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; transition: transform 0.25s; color: var(--text-muted); }
+  .qa-item.open .qa-chevron { transform: rotate(90deg); }
+  .qa-answer { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+  .qa-answer-inner { padding: 0 1.25rem 1rem 3rem; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6; }
+
+  /* Takeaway */
+  .takeaway { background: var(--bg-card); border: 1px solid var(--border); border-left: 3px solid var(--defense); border-radius: 0 10px 10px 0; padding: 1.5rem 1.75rem; margin-top: 2rem; }
+  .takeaway p { font-size: 0.95rem; line-height: 1.65; }
+  .takeaway strong { color: var(--text); }
+
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+</style>
+
+<!-- ═══════════════ HERO ═══════════════ -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-eyebrow"><span class="dot"></span> TRANSPORT SECURITY</div>
+    <h1>HTTPS & HSTS</h1>
+    <p class="hero-sub">HTTPS encrypts the channel. HSTS ensures the browser always uses it. Together they stop eavesdropping, tampering, and SSL stripping attacks.</p>
+
+    <div class="diagram-wrap">
+      <div class="step-label" id="step-label">Choose a scenario to see the flow</div>
+      <canvas id="main-canvas" width="1440" height="640"></canvas>
+      <div class="diagram-controls">
+        <button id="btn-tls">TLS Handshake</button>
+        <button id="btn-strip">SSL Stripping</button>
+        <button id="btn-hsts">HSTS Protection</button>
+        <button id="btn-reset">Reset</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ HTTP vs HTTPS ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">The difference</span>
+      <h2>HTTP vs HTTPS</h2>
+    </div>
+
+    <div class="compare-grid">
+      <div class="compare-card http">
+        <h3>HTTP (plain)</h3>
+        <ul>
+          <li>Traffic readable by anyone on the network</li>
+          <li>Data can be modified in transit (ad injection, malware)</li>
+          <li>No proof you're talking to the real server</li>
+          <li>Passwords, tokens, cookies sent in cleartext</li>
+          <li>ISPs can inject tracking headers</li>
+        </ul>
+      </div>
+      <div class="compare-card https">
+        <h3>HTTPS (TLS)</h3>
+        <ul>
+          <li>All traffic encrypted end-to-end</li>
+          <li>Tamper-proof — any modification breaks the MAC</li>
+          <li>Server authenticated via certificate chain</li>
+          <li>Forward secrecy — past sessions safe if key leaks</li>
+          <li>Required for HTTP/2, service workers, many APIs</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ TLS HANDSHAKE ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">Under the hood</span>
+      <h2>The TLS 1.3 handshake</h2>
+      <p>One round trip to establish an encrypted connection. Everything after the handshake uses fast symmetric encryption.</p>
+    </div>
+
+    <div class="anatomy-grid">
+      <div class="anatomy-step" data-type="info">
+        <div class="anatomy-num">1</div>
+        <div class="anatomy-content">
+          <h3>ClientHello</h3>
+          <p>Client sends supported TLS versions, cipher suites, and its ECDHE key share. In TLS 1.3 the key share is sent immediately — no extra round trip.</p>
+        </div>
+      </div>
+      <div class="anatomy-step" data-type="lock">
+        <div class="anatomy-num">2</div>
+        <div class="anatomy-content">
+          <h3>ServerHello + Certificate</h3>
+          <p>Server picks cipher, sends its ECDHE key share and certificate. In TLS 1.3, the certificate is already <strong>encrypted</strong> — passive observers can't see which site you're connecting to.</p>
+        </div>
+      </div>
+      <div class="anatomy-step" data-type="success">
+        <div class="anatomy-num">3</div>
+        <div class="anatomy-content">
+          <h3>Client verifies certificate</h3>
+          <p>Browser checks: Is the cert signed by a trusted CA? Does the domain match? Is it expired or revoked? Any failure → connection blocked.</p>
+        </div>
+      </div>
+      <div class="anatomy-step" data-type="lock">
+        <div class="anatomy-num">4</div>
+        <div class="anatomy-content">
+          <h3>Session key derived</h3>
+          <p>Both sides combine their ECDHE shares to derive the same symmetric key. This key never travels over the wire — even if recorded, the traffic can't be decrypted later (forward secrecy).</p>
+        </div>
+      </div>
+      <div class="anatomy-step" data-type="success">
+        <div class="anatomy-num">5</div>
+        <div class="anatomy-content">
+          <h3>Encrypted HTTP traffic</h3>
+          <p>All HTTP requests and responses are encrypted with AES-GCM or ChaCha20-Poly1305. Fast, authenticated, tamper-proof.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ SSL STRIPPING ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">The attack</span>
+      <h2>SSL stripping</h2>
+      <p>A man-in-the-middle downgrades your connection from HTTPS to HTTP. You see a working page — just no padlock.</p>
+    </div>
+
+    <div class="anatomy-grid">
+      <div class="anatomy-step" data-type="info">
+        <div class="anatomy-num">1</div>
+        <div class="anatomy-content">
+          <h3>User types bank.com</h3>
+          <p>Browser defaults to <code>http://bank.com</code> — plain HTTP. The first request is unencrypted.</p>
+        </div>
+      </div>
+      <div class="anatomy-step" data-type="danger">
+        <div class="anatomy-num">2</div>
+        <div class="anatomy-content">
+          <h3>Attacker intercepts the HTTP request</h3>
+          <p>On the same WiFi (coffee shop, hotel, airport). Uses ARP spoofing or a rogue access point to sit between victim and router.</p>
+        </div>
+      </div>
+      <div class="anatomy-step" data-type="danger">
+        <div class="anatomy-num">3</div>
+        <div class="anatomy-content">
+          <h3>Attacker connects to bank over HTTPS</h3>
+          <p>Attacker → bank.com is encrypted (HTTPS). But victim → attacker is plain HTTP. Attacker rewrites all <code>https://</code> links to <code>http://</code>.</p>
+        </div>
+      </div>
+      <div class="anatomy-step" data-type="danger">
+        <div class="anatomy-num">4</div>
+        <div class="anatomy-content">
+          <h3>Victim submits login — in plaintext</h3>
+          <p>The page looks real. No padlock, but most users don't check. Passwords, session tokens, card numbers — all visible to the attacker.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ HSTS TIMELINE ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">The defense</span>
+      <h2>How HSTS stops SSL stripping</h2>
+      <p><code>Strict-Transport-Security: max-age=31536000; includeSubDomains; preload</code></p>
+    </div>
+
+    <div class="timeline">
+      <div class="timeline-item" data-type="danger">
+        <div class="timeline-dot"></div>
+        <h3>First visit (vulnerable)</h3>
+        <p>Browser sends <code>http://bank.com</code>. Server 301-redirects to HTTPS. This first request is still vulnerable to stripping — the "first-visit problem."</p>
+      </div>
+      <div class="timeline-item" data-type="info">
+        <div class="timeline-dot"></div>
+        <h3>Browser receives HSTS header</h3>
+        <p>The HTTPS response includes <code>Strict-Transport-Security</code>. Browser stores: "bank.com is HTTPS-only for 1 year."</p>
+      </div>
+      <div class="timeline-item" data-type="success">
+        <div class="timeline-dot"></div>
+        <h3>All future visits (protected)</h3>
+        <p>User types <code>bank.com</code> → browser internally rewrites to <code>https://</code> before any network request. Shows as <code>307 Internal Redirect</code> in DevTools. No HTTP ever leaves the machine.</p>
+      </div>
+      <div class="timeline-item" data-type="success">
+        <div class="timeline-dot"></div>
+        <h3>HSTS Preload (first visit protected too)</h3>
+        <p>Domain added to the browser's built-in preload list. Even the very first visit goes to HTTPS. Shipped with Chrome, Firefox, Safari, Edge. Submit at hstspreload.org.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ VULNERABILITIES ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">Common issues</span>
+      <h2>HTTPS/HSTS vulnerabilities</h2>
+    </div>
+
+    <div class="vuln-grid">
+      <div class="vuln-card">
+        <h3>Mixed Content</h3>
+        <p>HTTPS page loads scripts/images over HTTP. Active mixed content (scripts) is blocked; passive (images) shows a warning. One HTTP resource breaks the entire security guarantee.</p>
+      </div>
+      <div class="vuln-card">
+        <h3>Weak TLS Config</h3>
+        <p>TLS 1.0/1.1 enabled (BEAST, POODLE). Weak ciphers like RC4 or DES. Missing forward secrecy. Fix: TLS 1.3 only, AES-GCM + ChaCha20.</p>
+      </div>
+      <div class="vuln-card">
+        <h3>Short HSTS max-age</h3>
+        <p><code>max-age=86400</code> (1 day) means the browser forgets after 24 hours. Attacker waits for expiry, then strips. Use at least 1 year.</p>
+      </div>
+      <div class="vuln-card">
+        <h3>Missing includeSubDomains</h3>
+        <p>HSTS without <code>includeSubDomains</code> leaves <code>http://sub.example.com</code> open to stripping. Attackers use subdomains to set malicious cookies.</p>
+      </div>
+      <div class="vuln-card">
+        <h3>HSTS on HTTP Response</h3>
+        <p>Browsers <strong>ignore</strong> HSTS headers received over HTTP — an attacker could inject them. HSTS only works when delivered over HTTPS.</p>
+      </div>
+      <div class="vuln-card">
+        <h3>Certificate Errors Ignored</h3>
+        <p>Training users to click "Proceed anyway" on cert warnings defeats the entire chain of trust. HSTS with preload prevents even the option to bypass.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ DEFENSES ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">Best practices</span>
+      <h2>Transport security checklist</h2>
+    </div>
+
+    <div class="defense-stack">
+      <div class="defense-layer">
+        <div class="defense-rank">L1</div>
+        <h3>HTTPS everywhere</h3>
+        <p>TLS 1.3, strong ciphers (AES-GCM, ChaCha20), forward secrecy (ECDHE). Redirect all HTTP → HTTPS with 301.</p>
+      </div>
+      <div class="defense-layer">
+        <div class="defense-rank">L2</div>
+        <h3>HSTS with max-age ≥ 1 year</h3>
+        <p><code>Strict-Transport-Security: max-age=31536000; includeSubDomains; preload</code></p>
+      </div>
+      <div class="defense-layer">
+        <div class="defense-rank">L3</div>
+        <h3>HSTS Preload</h3>
+        <p>Submit to hstspreload.org. Protects even the first visit. Removal takes months — commit fully.</p>
+      </div>
+      <div class="defense-layer">
+        <div class="defense-rank">L4</div>
+        <h3>No mixed content</h3>
+        <p>Use <code>Content-Security-Policy: upgrade-insecure-requests</code> to auto-upgrade HTTP subresources.</p>
+      </div>
+      <div class="defense-layer">
+        <div class="defense-rank">L5</div>
+        <h3>Certificate Transparency</h3>
+        <p>Ensure certs are CT-logged. Monitor CT logs for unauthorized certificates issued for your domain.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ INTERVIEW Q&A ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">Interview prep</span>
+      <h2>Quick-fire questions</h2>
+    </div>
+
+    <div class="qa-list" id="qa-list">
+      <div class="qa-item">
+        <button class="qa-question"><span class="qa-chevron"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>What does HTTPS protect against?</button>
+        <div class="qa-answer"><div class="qa-answer-inner"><strong>Eavesdropping</strong> (encrypts traffic), <strong>tampering</strong> (authenticated encryption detects modification), and <strong>impersonation</strong> (certificate validates server identity). It does NOT protect against vulnerabilities in the application itself — XSS, SQL injection, etc. still work over HTTPS.</div></div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-question"><span class="qa-chevron"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>What is forward secrecy and why does it matter?</button>
+        <div class="qa-answer"><div class="qa-answer-inner">Forward secrecy (via ECDHE) means each session uses a unique key derived from ephemeral key pairs. If the server's private key is compromised later, past recorded sessions <strong>cannot be decrypted</strong>. Without it (plain RSA key exchange), an attacker who records traffic and later steals the key can decrypt everything retroactively. TLS 1.3 mandates forward secrecy.</div></div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-question"><span class="qa-chevron"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>What is SSL stripping?</button>
+        <div class="qa-answer"><div class="qa-answer-inner">A MITM attack where the attacker intercepts the initial HTTP request, connects to the server over HTTPS, and serves the victim an HTTP version of the page. The victim stays on HTTP (no padlock) while the attacker relays everything. All credentials and data travel in plaintext between victim and attacker. HSTS + preloading prevents this by ensuring the browser never makes the HTTP request.</div></div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-question"><span class="qa-chevron"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>What's the first-visit problem with HSTS?</button>
+        <div class="qa-answer"><div class="qa-answer-inner">HSTS is delivered via an HTTP response header. On the very first visit, the browser hasn't seen this header yet — so it may connect over HTTP first. This window is vulnerable to SSL stripping. The fix is the <strong>HSTS preload list</strong>: a hardcoded list of HTTPS-only domains compiled into every major browser. Once preloaded, even the first visit is protected.</div></div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-question"><span class="qa-chevron"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>TLS 1.2 vs 1.3 — what changed?</button>
+        <div class="qa-answer"><div class="qa-answer-inner">TLS 1.3 removed insecure options (RSA key exchange, CBC ciphers, SHA-1, compression), requires forward secrecy, reduced the handshake from 2 round trips to 1, encrypts the server certificate (hiding which site you connect to from passive observers), and supports 0-RTT resumption for repeat connections. There are no known vulnerabilities in TLS 1.3 as of 2025.</div></div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-question"><span class="qa-chevron"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>What is mixed content and why is it dangerous?</button>
+        <div class="qa-answer"><div class="qa-answer-inner">An HTTPS page loading subresources over HTTP. <strong>Active mixed content</strong> (scripts, stylesheets, iframes) can be modified by a MITM to inject malicious code — browsers block it. <strong>Passive mixed content</strong> (images, audio, video) can leak information and be swapped — browsers warn but may allow it. Even one HTTP resource compromises the security of the entire page.</div></div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-question"><span class="qa-chevron"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Can HTTPS be bypassed?</button>
+        <div class="qa-answer"><div class="qa-answer-inner">Not directly if configured correctly. Attack vectors: (1) SSL stripping before HSTS kicks in, (2) compromised or misissued CA certificate, (3) user clicking through certificate warnings, (4) TLS implementation bugs (rare), (5) client-side malware installing a root CA for interception. Corporate proxies use the last technique legally — they install their CA on managed devices.</div></div>
+      </div>
+    </div>
+
+    <div class="takeaway">
+      <p><strong>Key takeaway:</strong> HTTPS encrypts the channel — but only if the browser actually uses it. HSTS ensures it does, and preloading covers the first visit. SSL stripping exploits the gap between typing a URL and reaching HTTPS. The fix: <code>Strict-Transport-Security: max-age=31536000; includeSubDomains; preload</code> — and submit to the preload list.</p>
+    </div>
+  </div>
+</section>
+
+<script>
+// ── Q&A Accordion ──
+document.getElementById('qa-list').addEventListener('click', e => {
+  const btn = e.target.closest('.qa-question');
+  if (!btn) return;
+  const item = btn.parentElement;
+  const answer = item.querySelector('.qa-answer');
+  const inner = answer.querySelector('.qa-answer-inner');
+  const isOpen = item.classList.contains('open');
+  document.querySelectorAll('.qa-item.open').forEach(el => {
+    el.classList.remove('open');
+    el.querySelector('.qa-answer').style.maxHeight = '0';
+  });
+  if (!isOpen) {
+    item.classList.add('open');
+    answer.style.maxHeight = inner.scrollHeight + 'px';
+  }
+});
+
+// ── Canvas Animation ──
+const canvas = document.getElementById('main-canvas');
+const ctx = canvas.getContext('2d');
+const dpr = Math.min(window.devicePixelRatio || 1, 2);
+const W = 640, H = 300;
+canvas.width = W * dpr;
+canvas.height = H * dpr;
+canvas.style.width = '100%';
+canvas.style.height = 'auto';
+canvas.style.aspectRatio = W + '/' + H;
+ctx.scale(dpr, dpr);
+
+const stepLabel = document.getElementById('step-label');
+function css(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function isLight(hex) { const c=hex.replace('#',''); if(c.length<6) return true; return (parseInt(c.substr(0,2),16)*299+parseInt(c.substr(2,2),16)*587+parseInt(c.substr(4,2),16)*114)/1000>160; }
+
+const baseNodes = [
+  { id: 'client', x: 100, y: 150, label: 'Client', sub: '(browser)' },
+  { id: 'server', x: 540, y: 150, label: 'Server', sub: '(bank.com)' },
+];
+const attackerNode = { id: 'attacker', x: 320, y: 150, label: 'Attacker', sub: '(MITM)' };
+
+const scenarios = {
+  tls: {
+    nodes: baseNodes,
+    steps: [
+      { msg: 'Client sends ClientHello — supported ciphers + ECDHE key share', from: 'client', to: 'server', color: () => css('--canvas-client'), active: ['client','server'] },
+      { msg: 'Server responds with ServerHello + certificate + ECDHE key share', from: 'server', to: 'client', color: () => css('--canvas-server'), active: ['server','client'] },
+      { msg: 'Client verifies certificate chain → trusted CA ✓', from: 'client', to: 'client', color: () => css('--canvas-server'), active: ['client'], final: 'verify' },
+      { msg: 'Both derive the same session key (ECDHE). Key never sent over wire', from: 'client', to: 'server', color: () => css('--canvas-encrypted'), active: ['client','server'] },
+      { msg: 'All HTTP traffic encrypted with AES-GCM — fast, authenticated, tamper-proof ✓', from: 'server', to: 'client', color: () => css('--canvas-encrypted'), active: ['client','server'], final: 'encrypted' },
+    ],
+  },
+  strip: {
+    nodes: [...baseNodes, attackerNode],
+    steps: [
+      { msg: 'User types bank.com → browser sends http://bank.com (plaintext)', from: 'client', to: 'attacker', color: () => css('--canvas-plaintext'), active: ['client','attacker'] },
+      { msg: 'Attacker intercepts, connects to real bank over HTTPS', from: 'attacker', to: 'server', color: () => css('--canvas-encrypted'), active: ['attacker','server'] },
+      { msg: 'Attacker rewrites all https:// links to http:// in the response', from: 'server', to: 'attacker', color: () => css('--canvas-encrypted'), active: ['server','attacker'] },
+      { msg: 'Victim sees working page over HTTP — no padlock, but page looks real', from: 'attacker', to: 'client', color: () => css('--canvas-plaintext'), active: ['attacker','client'] },
+      { msg: 'Victim submits password in plaintext — attacker reads everything ✗', from: 'client', to: 'attacker', color: () => css('--canvas-attacker'), active: ['client','attacker'], final: 'stolen' },
+    ],
+  },
+  hsts: {
+    nodes: baseNodes,
+    steps: [
+      { msg: 'User types bank.com → browser checks HSTS store', from: 'client', to: 'client', color: () => css('--canvas-client'), active: ['client'], final: 'check' },
+      { msg: 'HSTS active! Browser rewrites to https:// (307 Internal Redirect)', from: 'client', to: 'client', color: () => css('--canvas-encrypted'), active: ['client'], final: 'rewrite' },
+      { msg: 'Browser sends HTTPS request directly — no HTTP ever leaves', from: 'client', to: 'server', color: () => css('--canvas-encrypted'), active: ['client','server'] },
+      { msg: 'Encrypted connection established — SSL stripping impossible ✓', from: 'server', to: 'client', color: () => css('--canvas-encrypted'), active: ['client','server'], final: 'protected' },
+    ],
+  },
+};
+
+let curScenario = null, curStep = -1, animProg = 0, animating = false, animFrame = null;
+
+function getNode(id) { return (curScenario ? scenarios[curScenario].nodes : baseNodes).find(n => n.id === id); }
+
+function drawNode(n, highlight) {
+  const colors = { client: css('--canvas-client'), server: css('--canvas-server'), attacker: css('--canvas-attacker') };
+  const c = colors[n.id] || css('--canvas-text');
+  ctx.save();
+  if (highlight) { ctx.shadowColor = c; ctx.shadowBlur = 18; }
+  ctx.beginPath(); ctx.arc(n.x, n.y, 30, 0, Math.PI*2);
+  ctx.fillStyle = highlight ? c : 'transparent'; ctx.fill();
+  ctx.lineWidth = 2; ctx.strokeStyle = c; ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = highlight ? (isLight(c)?'#000':'#fff') : css('--canvas-text');
+  ctx.font = '700 11px "Space Mono", monospace'; ctx.textAlign = 'center';
+  ctx.fillText(n.label, n.x, n.y + 4);
+  ctx.fillStyle = css('--text-muted'); ctx.font = '400 10px "DM Sans", sans-serif';
+  ctx.fillText(n.sub, n.x, n.y + 46);
+}
+
+function drawPacket(from, to, t, color) {
+  if (from.id === to.id) return;
+  const x = from.x + (to.x - from.x) * t, y = from.y + (to.y - from.y) * t;
+  ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = 12;
+  ctx.beginPath(); ctx.arc(x, y, 8, 0, Math.PI*2); ctx.fillStyle = color; ctx.fill();
+  ctx.restore();
+  for (let i=1;i<=4;i++) {
+    const tt=Math.max(0,t-i*0.04), tx=from.x+(to.x-from.x)*tt, ty=from.y+(to.y-from.y)*tt;
+    ctx.beginPath(); ctx.arc(tx,ty,8*(1-i*0.2),0,Math.PI*2);
+    ctx.fillStyle=color; ctx.globalAlpha=0.3-i*0.06; ctx.fill(); ctx.globalAlpha=1;
+  }
+}
+
+function drawLine(a, b, encrypted) {
+  ctx.save(); ctx.strokeStyle = css('--canvas-line'); ctx.lineWidth = 1;
+  ctx.setLineDash(encrypted ? [] : [4,4]);
+  if (encrypted) { ctx.strokeStyle = css('--canvas-encrypted'); ctx.lineWidth = 2; ctx.globalAlpha = 0.3; }
+  ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+  ctx.restore();
+}
+
+function render() {
+  ctx.clearRect(0,0,W,H);
+  const nodes = curScenario ? scenarios[curScenario].nodes : baseNodes;
+  const steps = curScenario ? scenarios[curScenario].steps : null;
+  const step = steps && curStep>=0 && curStep<steps.length ? steps[curStep] : null;
+  const activeSet = step ? new Set(step.active) : new Set();
+
+  // Draw connections
+  for (let i=0;i<nodes.length-1;i++) {
+    const encrypted = step && (step.color() === css('--canvas-encrypted'));
+    drawLine(nodes[i], nodes[i+1], encrypted && !animating && curStep === steps.length-1);
+  }
+
+  nodes.forEach(n => drawNode(n, activeSet.has(n.id)));
+
+  if (step && animating && step.from !== step.to) {
+    drawPacket(getNode(step.from), getNode(step.to), animProg, step.color());
+  }
+
+  // Final state effects
+  if (step && !animating) {
+    const t = performance.now();
+    const pulse = (Math.sin(t/300)+1)/2;
+
+    if (step.final === 'encrypted' || step.final === 'protected') {
+      // Green glow on both
+      nodes.forEach(n => {
+        ctx.save(); ctx.globalAlpha = 0.12 + pulse*0.12;
+        ctx.beginPath(); ctx.arc(n.x,n.y,48,0,Math.PI*2);
+        ctx.fillStyle = css('--canvas-encrypted'); ctx.fill(); ctx.restore();
+      });
+      // Lock icon between nodes
+      const mx = (nodes[0].x + nodes[nodes.length-1].x)/2, my = nodes[0].y - 30;
+      ctx.save(); ctx.globalAlpha = 0.6+pulse*0.4;
+      ctx.strokeStyle = css('--canvas-encrypted'); ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(mx, my-4, 6, Math.PI, 0); ctx.stroke();
+      ctx.fillStyle = css('--canvas-encrypted');
+      ctx.fillRect(mx-8, my+2, 16, 12);
+      ctx.restore();
+    }
+
+    if (step.final === 'stolen') {
+      const aN = getNode('attacker');
+      ctx.save(); ctx.globalAlpha = 0.15+pulse*0.15;
+      ctx.beginPath(); ctx.arc(aN.x,aN.y,50,0,Math.PI*2);
+      ctx.fillStyle = css('--canvas-attacker'); ctx.fill(); ctx.restore();
+      ctx.save(); ctx.strokeStyle=css('--canvas-attacker'); ctx.lineWidth=3; ctx.globalAlpha=0.6+pulse*0.4;
+      ctx.beginPath(); ctx.moveTo(aN.x-10,aN.y-42); ctx.lineTo(aN.x+10,aN.y-22);
+      ctx.moveTo(aN.x+10,aN.y-42); ctx.lineTo(aN.x-10,aN.y-22); ctx.stroke(); ctx.restore();
+    }
+
+    if (step.final === 'rewrite') {
+      const cN = getNode('client');
+      ctx.save(); ctx.globalAlpha = 0.5+pulse*0.5; ctx.fillStyle = css('--canvas-encrypted');
+      ctx.font = '700 11px "Space Mono", monospace'; ctx.textAlign = 'center';
+      ctx.fillText('http:// → https://', cN.x, cN.y - 48); ctx.restore();
+    }
+  }
+}
+
+function animateStep() {
+  if (!animating) return;
+  animProg += 0.018;
+  if (animProg >= 1) {
+    animProg=1; animating=false; render();
+    const steps = scenarios[curScenario].steps;
+    setTimeout(() => {
+      if (curStep < steps.length-1) {
+        curStep++; stepLabel.textContent = `Step ${curStep+1}: ${steps[curStep].msg}`;
+        animProg=0; animating=true; animFrame=requestAnimationFrame(tick);
+      }
+    }, 900);
+    return;
+  }
+  render();
+  animFrame = requestAnimationFrame(tick);
+}
+
+function tick() {
+  animateStep();
+  const steps = curScenario ? scenarios[curScenario].steps : null;
+  if (steps && !animating && curStep === steps.length-1) {
+    render(); animFrame = requestAnimationFrame(tick);
+  }
+}
+
+function startScenario(name) {
+  cancelAnimationFrame(animFrame);
+  curScenario=name; curStep=0; animProg=0; animating=true;
+  stepLabel.textContent = `Step 1: ${scenarios[name].steps[0].msg}`;
+  document.querySelectorAll('.diagram-controls button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('btn-'+name)?.classList.add('active');
+  animFrame = requestAnimationFrame(tick);
+}
+
+function resetAnim() {
+  cancelAnimationFrame(animFrame);
+  curScenario=null; curStep=-1; animProg=0; animating=false;
+  stepLabel.textContent='Choose a scenario to see the flow';
+  document.querySelectorAll('.diagram-controls button').forEach(b=>b.classList.remove('active'));
+  render();
+}
+
+document.getElementById('btn-tls').addEventListener('click', ()=>startScenario('tls'));
+document.getElementById('btn-strip').addEventListener('click', ()=>startScenario('strip'));
+document.getElementById('btn-hsts').addEventListener('click', ()=>startScenario('hsts'));
+document.getElementById('btn-reset').addEventListener('click', resetAnim);
+
+render();
+setTimeout(()=>startScenario('tls'), 600);
+
+const observer = new MutationObserver(()=>render());
+observer.observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', ()=>render());
+</script>

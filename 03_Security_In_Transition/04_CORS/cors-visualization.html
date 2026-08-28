@@ -1,0 +1,1317 @@
+<title>CORS Explained</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700&display=swap">
+
+<style>
+  /* ── Tokens ── */
+  :root {
+    --bg: #f5f2eb;
+    --bg-card: #ffffff;
+    --bg-card-alt: #edeae3;
+    --bg-code: #e8e4dc;
+    --text: #1a1a2e;
+    --text-secondary: #5a6172;
+    --text-muted: #8b92a0;
+    --border: #d5d0c7;
+    --border-subtle: #e5e1d9;
+    --accent: #6366f1;
+    --accent-bg: #eef2ff;
+    --accent-glow: rgba(99,102,241,0.15);
+    --attack: #e84057;
+    --attack-bg: #fde8eb;
+    --attack-glow: rgba(232,64,87,0.15);
+    --defense: #22c9a0;
+    --defense-bg: #e4f8f2;
+    --defense-glow: rgba(34,201,160,0.15);
+    --warn: #f0a84a;
+    --warn-bg: #fdf3e0;
+    --warn-glow: rgba(240,168,74,0.15);
+    --browser: #3b82f6;
+    --browser-bg: #e8f0fe;
+    --browser-glow: rgba(59,130,246,0.12);
+    --hero-gradient: linear-gradient(165deg, #f5f2eb 0%, #ede8df 50%, #e8e4dc 100%);
+    --shadow-sm: 0 1px 3px rgba(26,26,46,0.06);
+    --shadow-md: 0 4px 16px rgba(26,26,46,0.08);
+    --shadow-lg: 0 8px 32px rgba(26,26,46,0.1);
+    --canvas-origin: #6366f1;
+    --canvas-server: #22c9a0;
+    --canvas-browser: #3b82f6;
+    --canvas-blocked: #e84057;
+    --canvas-line: #d5d0c7;
+    --canvas-text: #1a1a2e;
+    --canvas-packet: #f0a84a;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0c1222;
+      --bg-card: #141c30;
+      --bg-card-alt: #1a2340;
+      --bg-code: #111827;
+      --text: #e4e7ed;
+      --text-secondary: #9ca3b4;
+      --text-muted: #64708a;
+      --border: #253050;
+      --border-subtle: #1e2a45;
+      --accent: #818cf8;
+      --accent-bg: rgba(129,140,248,0.1);
+      --accent-glow: rgba(129,140,248,0.2);
+      --attack: #f06275;
+      --attack-bg: rgba(240,98,117,0.12);
+      --attack-glow: rgba(240,98,117,0.2);
+      --defense: #3cddb5;
+      --defense-bg: rgba(60,221,181,0.1);
+      --defense-glow: rgba(60,221,181,0.18);
+      --warn: #f5b863;
+      --warn-bg: rgba(245,184,99,0.1);
+      --warn-glow: rgba(245,184,99,0.15);
+      --browser: #60a5fa;
+      --browser-bg: rgba(96,165,250,0.1);
+      --browser-glow: rgba(96,165,250,0.12);
+      --hero-gradient: linear-gradient(165deg, #0c1222 0%, #111b2e 50%, #0f172a 100%);
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.35);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.4);
+      --canvas-origin: #818cf8;
+      --canvas-server: #3cddb5;
+      --canvas-browser: #60a5fa;
+      --canvas-blocked: #f06275;
+      --canvas-line: #253050;
+      --canvas-text: #e4e7ed;
+      --canvas-packet: #f5b863;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0c1222;
+    --bg-card: #141c30;
+    --bg-card-alt: #1a2340;
+    --bg-code: #111827;
+    --text: #e4e7ed;
+    --text-secondary: #9ca3b4;
+    --text-muted: #64708a;
+    --border: #253050;
+    --border-subtle: #1e2a45;
+    --accent: #818cf8;
+    --accent-bg: rgba(129,140,248,0.1);
+    --accent-glow: rgba(129,140,248,0.2);
+    --attack: #f06275;
+    --attack-bg: rgba(240,98,117,0.12);
+    --attack-glow: rgba(240,98,117,0.2);
+    --defense: #3cddb5;
+    --defense-bg: rgba(60,221,181,0.1);
+    --defense-glow: rgba(60,221,181,0.18);
+    --warn: #f5b863;
+    --warn-bg: rgba(245,184,99,0.1);
+    --warn-glow: rgba(245,184,99,0.15);
+    --browser: #60a5fa;
+    --browser-bg: rgba(96,165,250,0.1);
+    --browser-glow: rgba(96,165,250,0.12);
+    --hero-gradient: linear-gradient(165deg, #0c1222 0%, #111b2e 50%, #0f172a 100%);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.35);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.4);
+    --canvas-origin: #818cf8;
+    --canvas-server: #3cddb5;
+    --canvas-browser: #60a5fa;
+    --canvas-blocked: #f06275;
+    --canvas-line: #253050;
+    --canvas-text: #e4e7ed;
+    --canvas-packet: #f5b863;
+  }
+
+  /* ── Reset & base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* ── Typography ── */
+  h1, h2, h3 {
+    font-family: 'Space Mono', 'Courier New', monospace;
+    text-wrap: balance;
+    line-height: 1.2;
+  }
+  h1 { font-size: clamp(1.8rem, 4.5vw, 3rem); font-weight: 700; letter-spacing: -0.02em; }
+  h2 { font-size: clamp(1.3rem, 3vw, 1.75rem); font-weight: 700; letter-spacing: -0.01em; }
+  h3 { font-size: 1.05rem; font-weight: 700; }
+
+  .label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  code {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85em;
+    background: var(--bg-code);
+    padding: 0.15em 0.4em;
+    border-radius: 4px;
+  }
+
+  /* ── Layout ── */
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 clamp(1rem, 4vw, 2rem);
+  }
+
+  section {
+    padding: clamp(3rem, 6vw, 5rem) 0;
+  }
+
+  section + section {
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  /* ── Hero ── */
+  .hero {
+    background: var(--hero-gradient);
+    padding: clamp(3rem, 8vw, 5rem) 0 clamp(2rem, 5vw, 3rem);
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+    padding: 0.35rem 0.85rem;
+    background: var(--accent-bg);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 100px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .hero-eyebrow .dot {
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.4); }
+  }
+  .hero h1 { margin-bottom: 1rem; }
+  .hero-sub {
+    font-size: clamp(1rem, 2vw, 1.15rem);
+    color: var(--text-secondary);
+    max-width: 640px;
+    margin: 0 auto 2.5rem;
+  }
+
+  /* ── Canvas diagram ── */
+  .diagram-wrap {
+    position: relative;
+    max-width: 720px;
+    margin: 0 auto;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+  }
+  .diagram-wrap canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .diagram-controls {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--border-subtle);
+    background: var(--bg-card-alt);
+    flex-wrap: wrap;
+  }
+  .diagram-controls button {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 0.4rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .diagram-controls button:hover,
+  .diagram-controls button:focus-visible {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-bg);
+    outline: none;
+  }
+  .diagram-controls button.active {
+    border-color: var(--accent);
+    color: #fff;
+    background: var(--accent);
+  }
+  .step-label {
+    text-align: center;
+    padding: 0.75rem 1rem 0;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    min-height: 2.5rem;
+  }
+
+  /* ── Section titles ── */
+  .section-header {
+    margin-bottom: 2.5rem;
+  }
+  .section-header .label {
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+  .section-header p {
+    color: var(--text-secondary);
+    max-width: 560px;
+    margin-top: 0.5rem;
+  }
+
+  /* ── Origin breakdown ── */
+  .origin-demo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  .origin-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-card);
+    transition: all 0.2s;
+  }
+  .origin-row:hover { border-color: var(--accent); box-shadow: var(--shadow-sm); }
+  .origin-url {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    word-break: break-all;
+  }
+  .origin-url .scheme { color: var(--browser); }
+  .origin-url .host { color: var(--accent); }
+  .origin-url .port { color: var(--warn); }
+  .origin-badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
+  .origin-badge.same { background: var(--defense-bg); color: var(--defense); border: 1px solid var(--defense); }
+  .origin-badge.diff { background: var(--attack-bg); color: var(--attack); border: 1px solid var(--attack); }
+  .origin-badge.ref { background: var(--accent-bg); color: var(--accent); border: 1px solid var(--accent); }
+
+  /* ── Anatomy steps ── */
+  .anatomy-grid {
+    display: grid;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .anatomy-step {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 0;
+    background: var(--bg-card);
+    transition: background 0.2s;
+  }
+  .anatomy-step:hover { background: var(--bg-card-alt); }
+  .anatomy-num {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    border-right: 1px solid var(--border);
+    background: var(--bg-card-alt);
+  }
+  .anatomy-content {
+    padding: 1rem 1.25rem;
+  }
+  .anatomy-content h3 {
+    font-size: 0.95rem;
+    margin-bottom: 0.3rem;
+  }
+  .anatomy-content p {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    line-height: 1.55;
+  }
+  .anatomy-step[data-type="danger"] .anatomy-num { color: var(--attack); background: var(--attack-bg); }
+  .anatomy-step[data-type="success"] .anatomy-num { color: var(--defense); background: var(--defense-bg); }
+  .anatomy-step[data-type="info"] .anatomy-num { color: var(--browser); background: var(--browser-bg); }
+  .anatomy-step[data-type="accent"] .anatomy-num { color: var(--accent); background: var(--accent-bg); }
+  .anatomy-step[data-type="warning"] .anatomy-num { color: var(--warn); background: var(--warn-bg); }
+
+  /* ── Headers table ── */
+  .headers-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    font-size: 0.88rem;
+  }
+  .headers-table thead {
+    background: var(--bg-card-alt);
+  }
+  .headers-table th {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .headers-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--bg-card);
+    vertical-align: top;
+  }
+  .headers-table tr:last-child td { border-bottom: none; }
+  .headers-table tr:hover td { background: var(--bg-card-alt); }
+  .header-dir {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
+  .header-dir.req { background: var(--browser-bg); color: var(--browser); }
+  .header-dir.res { background: var(--defense-bg); color: var(--defense); }
+
+  /* ── Misconfig cards ── */
+  .misconfig-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  @media (max-width: 600px) { .misconfig-grid { grid-template-columns: 1fr; } }
+  .misconfig-card {
+    padding: 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-card);
+    transition: all 0.25s;
+    border-left: 3px solid var(--attack);
+  }
+  .misconfig-card:hover {
+    border-color: var(--attack);
+    box-shadow: 0 0 0 1px var(--attack), var(--shadow-md);
+    transform: translateY(-1px);
+  }
+  .misconfig-card h3 { font-size: 0.9rem; margin-bottom: 0.4rem; }
+  .misconfig-card p {
+    font-size: 0.84rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 0.5rem;
+  }
+  .misconfig-card .code-block {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    background: var(--bg-code);
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    overflow-x: auto;
+    white-space: pre;
+    color: var(--attack);
+    line-height: 1.5;
+  }
+  .severity {
+    display: inline-block;
+    margin-top: 0.5rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.05em;
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    font-weight: 700;
+  }
+  .severity.critical { background: var(--attack-bg); color: var(--attack); border: 1px solid var(--attack); }
+  .severity.high { background: var(--warn-bg); color: var(--warn); border: 1px solid var(--warn); }
+
+  /* ── Defense layers ── */
+  .defense-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  .defense-layer {
+    position: relative;
+    padding: 1.25rem 1.5rem 1.25rem 4.5rem;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    transition: all 0.25s;
+  }
+  .defense-layer:first-child { border-radius: 12px 12px 0 0; }
+  .defense-layer:last-child { border-radius: 0 0 12px 12px; }
+  .defense-layer + .defense-layer { border-top: none; }
+  .defense-layer:hover {
+    background: var(--defense-bg);
+    border-color: var(--defense);
+    z-index: 1;
+  }
+  .defense-layer:hover + .defense-layer { border-top-color: var(--defense); }
+  .defense-rank {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--defense);
+    border-right: 1px solid var(--border);
+    background: var(--defense-bg);
+  }
+  .defense-layer h3 {
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+  }
+  .defense-layer p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  .defense-layer code { font-size: 0.78rem; }
+
+  /* ── Interview Q&A ── */
+  .qa-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .qa-item {
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--bg-card);
+  }
+  .qa-item:last-child { border-bottom: none; }
+  .qa-question {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    user-select: none;
+    font-weight: 600;
+    font-size: 0.92rem;
+    transition: background 0.15s;
+    border: none;
+    background: none;
+    color: var(--text);
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+    line-height: 1.4;
+  }
+  .qa-question:hover { background: var(--bg-card-alt); }
+  .qa-question:focus-visible { outline: 2px solid var(--browser); outline-offset: -2px; }
+  .qa-chevron {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.25s;
+    color: var(--text-muted);
+  }
+  .qa-item.open .qa-chevron { transform: rotate(90deg); }
+  .qa-answer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+  .qa-answer-inner {
+    padding: 0 1.25rem 1rem 3rem;
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  /* ── Comparison grid ── */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  @media (max-width: 600px) { .compare-grid { grid-template-columns: 1fr; } }
+  .compare-col {
+    padding: 1.5rem;
+    background: var(--bg-card);
+    border-right: 1px solid var(--border-subtle);
+  }
+  .compare-col:last-child { border-right: none; }
+  @media (max-width: 600px) {
+    .compare-col { border-right: none; border-bottom: 1px solid var(--border-subtle); }
+    .compare-col:last-child { border-bottom: none; }
+  }
+  .compare-col h3 {
+    font-size: 0.9rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--accent);
+  }
+  .compare-col ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .compare-col li {
+    font-size: 0.84rem;
+    color: var(--text-secondary);
+    line-height: 1.45;
+    padding-left: 1rem;
+    position: relative;
+  }
+  .compare-col li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.5em;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  /* ── Takeaway ── */
+  .takeaway {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--defense);
+    border-radius: 0 10px 10px 0;
+    padding: 1.5rem 1.75rem;
+    margin-top: 2rem;
+  }
+  .takeaway p {
+    font-size: 0.95rem;
+    line-height: 1.65;
+  }
+  .takeaway strong { color: var(--text); }
+
+  /* ── Utility ── */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+</style>
+
+<!-- ═══════════════ HERO ═══════════════ -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-eyebrow"><span class="dot"></span> BROWSER SECURITY</div>
+    <h1>Cross-Origin Resource Sharing</h1>
+    <p class="hero-sub">CORS is how servers opt specific origins into reading their responses. It's the controlled relaxation of the Same-Origin Policy — not a security feature, but a permission system.</p>
+
+    <div class="diagram-wrap">
+      <div class="step-label" id="step-label">Choose a scenario to see the CORS flow</div>
+      <canvas id="cors-canvas" width="1440" height="640"></canvas>
+      <div class="diagram-controls">
+        <button id="btn-simple" class="active">Simple Request</button>
+        <button id="btn-preflight">Preflight</button>
+        <button id="btn-blocked">Blocked (misconfig)</button>
+        <button id="btn-reset">Reset</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ ORIGIN ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">Fundamentals</span>
+      <h2>What is an "Origin"?</h2>
+      <p>An origin is <strong>scheme + host + port</strong>. Change any one part and it's a different origin.</p>
+    </div>
+
+    <div class="origin-demo">
+      <div class="origin-row">
+        <div class="origin-url"><span class="scheme">https://</span><span class="host">example.com</span><span class="port">:443</span></div>
+        <span class="origin-badge ref">REFERENCE</span>
+      </div>
+      <div class="origin-row">
+        <div class="origin-url"><span class="scheme">https://</span><span class="host">example.com</span><span class="port">:443</span>/page</div>
+        <span class="origin-badge same">SAME ORIGIN</span>
+      </div>
+      <div class="origin-row">
+        <div class="origin-url"><span class="scheme">http://</span><span class="host">example.com</span><span class="port">:80</span></div>
+        <span class="origin-badge diff">DIFFERENT (scheme)</span>
+      </div>
+      <div class="origin-row">
+        <div class="origin-url"><span class="scheme">https://</span><span class="host">api.example.com</span><span class="port">:443</span></div>
+        <span class="origin-badge diff">DIFFERENT (host)</span>
+      </div>
+      <div class="origin-row">
+        <div class="origin-url"><span class="scheme">https://</span><span class="host">example.com</span><span class="port">:8443</span></div>
+        <span class="origin-badge diff">DIFFERENT (port)</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ SIMPLE vs PREFLIGHT ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">Two request types</span>
+      <h2>Simple vs Preflight requests</h2>
+      <p>A "simple" request goes straight through. Everything else triggers a preflight OPTIONS check first.</p>
+    </div>
+
+    <div class="anatomy-grid">
+      <div class="anatomy-step" data-type="info">
+        <div class="anatomy-num">S</div>
+        <div class="anatomy-content">
+          <h3>Simple request — no preflight</h3>
+          <p>Method is <code>GET</code>, <code>HEAD</code>, or <code>POST</code>. Only safe headers. Content-Type limited to <code>text/plain</code>, <code>multipart/form-data</code>, or <code>application/x-www-form-urlencoded</code>. Request is sent immediately — <strong>server processes it regardless</strong>. CORS only controls whether JS can read the response.</p>
+        </div>
+      </div>
+      <div class="anatomy-step" data-type="accent">
+        <div class="anatomy-num">P1</div>
+        <div class="anatomy-content">
+          <h3>Preflight — browser sends OPTIONS first</h3>
+          <p>Triggered by: <code>PUT</code>/<code>DELETE</code>/<code>PATCH</code>, custom headers like <code>Authorization</code>, or <code>Content-Type: application/json</code>. Browser asks: "Is this allowed?" with <code>Access-Control-Request-Method</code> and <code>Access-Control-Request-Headers</code>.</p>
+        </div>
+      </div>
+      <div class="anatomy-step" data-type="success">
+        <div class="anatomy-num">P2</div>
+        <div class="anatomy-content">
+          <h3>Server approves — actual request sent</h3>
+          <p>If the preflight response includes the right <code>Access-Control-Allow-*</code> headers, the browser sends the real request. <code>Access-Control-Max-Age</code> caches the preflight so subsequent requests skip it.</p>
+        </div>
+      </div>
+      <div class="anatomy-step" data-type="danger">
+        <div class="anatomy-num">P3</div>
+        <div class="anatomy-content">
+          <h3>Server denies — request never sent</h3>
+          <p>If the preflight fails (wrong origin, missing method), the browser <strong>never sends the actual request</strong>. This is the key difference from simple requests: preflight protects the server from even receiving the request.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ HEADERS ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">Reference</span>
+      <h2>CORS headers</h2>
+    </div>
+
+    <div style="overflow-x: auto;">
+    <table class="headers-table">
+      <thead>
+        <tr>
+          <th>Header</th>
+          <th>Dir</th>
+          <th>Purpose</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>Origin</code></td>
+          <td><span class="header-dir req">REQ</span></td>
+          <td>Browser-set. Tells the server where the request came from</td>
+        </tr>
+        <tr>
+          <td><code>Access-Control-Allow-Origin</code></td>
+          <td><span class="header-dir res">RES</span></td>
+          <td>Which origin can read the response (<code>*</code> or exact origin)</td>
+        </tr>
+        <tr>
+          <td><code>Access-Control-Allow-Methods</code></td>
+          <td><span class="header-dir res">RES</span></td>
+          <td>Preflight: which HTTP methods are allowed</td>
+        </tr>
+        <tr>
+          <td><code>Access-Control-Allow-Headers</code></td>
+          <td><span class="header-dir res">RES</span></td>
+          <td>Preflight: which custom headers are allowed</td>
+        </tr>
+        <tr>
+          <td><code>Access-Control-Allow-Credentials</code></td>
+          <td><span class="header-dir res">RES</span></td>
+          <td>Whether cookies/auth can be included (can't use with <code>*</code>)</td>
+        </tr>
+        <tr>
+          <td><code>Access-Control-Expose-Headers</code></td>
+          <td><span class="header-dir res">RES</span></td>
+          <td>Which response headers JS can read beyond the safe set</td>
+        </tr>
+        <tr>
+          <td><code>Access-Control-Max-Age</code></td>
+          <td><span class="header-dir res">RES</span></td>
+          <td>How long (seconds) to cache the preflight result</td>
+        </tr>
+        <tr>
+          <td><code>Access-Control-Request-Method</code></td>
+          <td><span class="header-dir req">REQ</span></td>
+          <td>Preflight: what method the actual request will use</td>
+        </tr>
+        <tr>
+          <td><code>Access-Control-Request-Headers</code></td>
+          <td><span class="header-dir req">REQ</span></td>
+          <td>Preflight: what custom headers the actual request will send</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ MISCONFIGURATIONS ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">Vulnerabilities</span>
+      <h2>Common CORS misconfigurations</h2>
+      <p>Each of these lets an attacker's site read authenticated responses from your API.</p>
+    </div>
+
+    <div class="misconfig-grid">
+      <div class="misconfig-card">
+        <h3>Reflected Origin</h3>
+        <p>Server blindly echoes back whatever <code>Origin</code> header was sent. Any site can read authenticated data.</p>
+        <div class="code-block">ACAO: ${req.headers.origin}
+ACAC: true</div>
+        <span class="severity critical">CRITICAL</span>
+      </div>
+
+      <div class="misconfig-card">
+        <h3>Null Origin Allowed</h3>
+        <p>Sandboxed iframes and <code>data:</code> URIs send <code>Origin: null</code>. Attacker crafts a page that exploits this.</p>
+        <div class="code-block">ACAO: null
+ACAC: true</div>
+        <span class="severity critical">CRITICAL</span>
+      </div>
+
+      <div class="misconfig-card">
+        <h3>Weak Regex</h3>
+        <p>Checking <code>endsWith("example.com")</code> also matches <code>evil-example.com</code>. Partial matching = full bypass.</p>
+        <div class="code-block">origin.endsWith("example.com")
+// evil-example.com ✓ (oops)</div>
+        <span class="severity critical">CRITICAL</span>
+      </div>
+
+      <div class="misconfig-card">
+        <h3>Subdomain Wildcard</h3>
+        <p>Allowing <code>*.example.com</code> trusts every subdomain. One subdomain takeover = full CORS bypass.</p>
+        <div class="code-block">ACAO: *.example.com
+// stolen-sub.example.com ✓</div>
+        <span class="severity high">HIGH</span>
+      </div>
+
+      <div class="misconfig-card">
+        <h3>Wildcard + Credentials</h3>
+        <p>Browsers reject <code>*</code> with credentials, but it signals the dev wanted full access — the real config may be worse.</p>
+        <div class="code-block">ACAO: *
+ACAC: true  // browser rejects</div>
+        <span class="severity high">HIGH</span>
+      </div>
+
+      <div class="misconfig-card">
+        <h3>Missing Vary: Origin</h3>
+        <p>Without <code>Vary: Origin</code>, CDN caches one origin's ACAO header and serves it to all — cache poisoning.</p>
+        <div class="code-block">// Cache stores ACAO: good.com
+// evil.com gets cached ACAO</div>
+        <span class="severity high">HIGH</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ DEFENSES ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">Defense layers</span>
+      <h2>Configuring CORS correctly</h2>
+    </div>
+
+    <div class="defense-stack">
+      <div class="defense-layer">
+        <div class="defense-rank">L1</div>
+        <h3>Explicit origin allowlist</h3>
+        <p>Maintain a <code>Set</code> of allowed origins. Check with exact string match — never regex, never <code>.endsWith()</code>.</p>
+        <code>if (ALLOWED.has(origin)) res.set('ACAO', origin)</code>
+      </div>
+      <div class="defense-layer">
+        <div class="defense-rank">L2</div>
+        <h3>Always set Vary: Origin</h3>
+        <p>When ACAO changes per request, <code>Vary: Origin</code> prevents CDN cache poisoning. Always include it.</p>
+        <code>res.set('Vary', 'Origin')</code>
+      </div>
+      <div class="defense-layer">
+        <div class="defense-rank">L3</div>
+        <h3>Never allow null origin</h3>
+        <p>Reject <code>Origin: null</code> outright. Sandboxed iframes and data URIs send it — all attacker-controlled.</p>
+      </div>
+      <div class="defense-layer">
+        <div class="defense-rank">L4</div>
+        <h3>Minimize exposed surface</h3>
+        <p>Only allow the methods and headers your API actually uses. Don't <code>Allow-Methods: *</code> or <code>Allow-Headers: *</code>.</p>
+      </div>
+      <div class="defense-layer">
+        <div class="defense-rank">L5</div>
+        <h3>Credentials only when needed</h3>
+        <p>Only set <code>Allow-Credentials: true</code> on endpoints that need cookies. Prefer token-based auth in headers.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ SOP vs CORS vs CSP ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">Context</span>
+      <h2>SOP vs CORS vs CSP</h2>
+    </div>
+
+    <div class="compare-grid">
+      <div class="compare-col">
+        <h3>Same-Origin Policy</h3>
+        <ul>
+          <li>Browser default</li>
+          <li>Blocks cross-origin reads</li>
+          <li>Allows cross-origin writes (forms, links)</li>
+          <li>Allows cross-origin embeds (images, scripts, iframes)</li>
+          <li>No server config needed</li>
+        </ul>
+      </div>
+      <div class="compare-col">
+        <h3>CORS</h3>
+        <ul>
+          <li>Server opt-in to relax SOP</li>
+          <li>Controls which origins can read responses</li>
+          <li>Uses HTTP headers</li>
+          <li>Preflight for non-simple requests</li>
+          <li>Not a security feature — a permission system</li>
+        </ul>
+      </div>
+      <div class="compare-col">
+        <h3>CSP</h3>
+        <ul>
+          <li>Server directive for page behavior</li>
+          <li>Controls what the page itself can load</li>
+          <li>Restricts scripts, styles, images, frames</li>
+          <li>Mitigates XSS</li>
+          <li>Complementary to SOP/CORS</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ INTERVIEW Q&A ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">Interview prep</span>
+      <h2>Quick-fire questions</h2>
+    </div>
+
+    <div class="qa-list" id="qa-list">
+      <div class="qa-item">
+        <button class="qa-question">
+          <span class="qa-chevron"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          What is CORS in one sentence?
+        </button>
+        <div class="qa-answer"><div class="qa-answer-inner">CORS is an HTTP-header-based mechanism that lets a server tell the browser which other origins are allowed to read its responses, selectively relaxing the Same-Origin Policy.</div></div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-question">
+          <span class="qa-chevron"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          Does CORS prevent the request from being sent?
+        </button>
+        <div class="qa-answer"><div class="qa-answer-inner">For <strong>simple requests</strong> — no. The request is sent and processed; CORS only blocks JS from reading the response. For <strong>preflighted requests</strong> — yes. If the OPTIONS check fails, the actual request is never sent. This is the critical distinction.</div></div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-question">
+          <span class="qa-chevron"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          Why can't you use Access-Control-Allow-Origin: * with credentials?
+        </button>
+        <div class="qa-answer"><div class="qa-answer-inner">Because wildcard + credentials would let <em>any</em> site read authenticated responses — effectively disabling the Same-Origin Policy. The browser enforces this: if <code>Allow-Credentials: true</code>, <code>Allow-Origin</code> must be an exact origin, not <code>*</code>. This is by design, not a bug.</div></div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-question">
+          <span class="qa-chevron"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          What triggers a preflight request?
+        </button>
+        <div class="qa-answer"><div class="qa-answer-inner">Any of these: a non-simple HTTP method (<code>PUT</code>, <code>DELETE</code>, <code>PATCH</code>), custom headers like <code>Authorization</code> or <code>X-Custom</code>, or a Content-Type that isn't <code>text/plain</code>, <code>multipart/form-data</code>, or <code>application/x-www-form-urlencoded</code>. The browser sends an <code>OPTIONS</code> request first to check if the server allows it.</div></div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-question">
+          <span class="qa-chevron"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          Is CORS enforced server-side?
+        </button>
+        <div class="qa-answer"><div class="qa-answer-inner"><strong>No.</strong> CORS is enforced entirely by the browser. Server-to-server requests (like <code>curl</code> or a backend calling another backend) completely bypass CORS. The server only <em>declares</em> the policy via headers; the browser <em>enforces</em> it. This is why CORS misconfiguration is a server-side vulnerability — the attacker's page runs in the victim's browser.</div></div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-question">
+          <span class="qa-chevron"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          What's the most dangerous CORS misconfiguration?
+        </button>
+        <div class="qa-answer"><div class="qa-answer-inner">Reflecting the <code>Origin</code> header back as <code>Access-Control-Allow-Origin</code> with <code>Access-Control-Allow-Credentials: true</code>. This lets any site read authenticated responses — account data, tokens, PII. It's functionally equivalent to having no Same-Origin Policy at all for that endpoint.</div></div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-question">
+          <span class="qa-chevron"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          CORS vs CSRF — how are they related?
+        </button>
+        <div class="qa-answer"><div class="qa-answer-inner">They're complementary but different. <strong>CSRF</strong> exploits cross-origin <em>writes</em> — making the browser send a forged request (form submit, img tag). <strong>CORS misconfiguration</strong> exploits cross-origin <em>reads</em> — letting an attacker's page read the response. SOP blocks reads by default; CORS loosens that. SameSite cookies and CSRF tokens block forged writes. A misconfigured CORS policy is often worse than CSRF because the attacker can <em>exfiltrate</em> data, not just trigger actions.</div></div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-question">
+          <span class="qa-chevron"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          Why is Vary: Origin important?
+        </button>
+        <div class="qa-answer"><div class="qa-answer-inner">Without <code>Vary: Origin</code>, a CDN may cache the <code>Access-Control-Allow-Origin</code> response from one origin and serve it to requests from a different origin. This causes either: legitimate cross-origin requests to fail (wrong ACAO), or an attacker to poison the cache by making the first request from their origin. Always set <code>Vary: Origin</code> when the ACAO header varies per request.</div></div>
+      </div>
+    </div>
+
+    <div class="takeaway">
+      <p><strong>Key takeaway:</strong> CORS is not a security feature — it's a permission system that relaxes the Same-Origin Policy. The most critical mistake is reflecting the <code>Origin</code> header with credentials enabled. Use an explicit allowlist, always set <code>Vary: Origin</code>, never trust <code>null</code>, and match origins with exact strings.</p>
+    </div>
+  </div>
+</section>
+
+<script>
+// ── Q&A Accordion ──
+document.getElementById('qa-list').addEventListener('click', e => {
+  const btn = e.target.closest('.qa-question');
+  if (!btn) return;
+  const item = btn.parentElement;
+  const answer = item.querySelector('.qa-answer');
+  const inner = answer.querySelector('.qa-answer-inner');
+  const isOpen = item.classList.contains('open');
+  document.querySelectorAll('.qa-item.open').forEach(el => {
+    el.classList.remove('open');
+    el.querySelector('.qa-answer').style.maxHeight = '0';
+  });
+  if (!isOpen) {
+    item.classList.add('open');
+    answer.style.maxHeight = inner.scrollHeight + 'px';
+  }
+});
+
+// ── Canvas CORS animation ──
+const canvas = document.getElementById('cors-canvas');
+const ctx = canvas.getContext('2d');
+const dpr = Math.min(window.devicePixelRatio || 1, 2);
+const W = 640, H = 300;
+canvas.width = W * dpr;
+canvas.height = H * dpr;
+canvas.style.width = '100%';
+canvas.style.height = 'auto';
+canvas.style.aspectRatio = W + '/' + H;
+ctx.scale(dpr, dpr);
+
+const stepLabel = document.getElementById('step-label');
+
+function css(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+const nodes = [
+  { id: 'app', x: 100, y: 150, label: 'app.com', sub: '(your frontend)' },
+  { id: 'browser', x: 320, y: 150, label: 'Browser', sub: '(enforces CORS)' },
+  { id: 'api', x: 540, y: 150, label: 'api.com', sub: '(server)' },
+];
+
+const scenarios = {
+  simple: [
+    { msg: 'JS on app.com calls fetch("https://api.com/data")', from: 'app', to: 'browser', color: () => css('--canvas-origin'), active: ['app','browser'] },
+    { msg: 'Browser sends GET with Origin: https://app.com', from: 'browser', to: 'api', color: () => css('--canvas-browser'), active: ['browser','api'] },
+    { msg: 'Server responds with Access-Control-Allow-Origin: https://app.com', from: 'api', to: 'browser', color: () => css('--canvas-server'), active: ['api','browser'] },
+    { msg: 'Origin matches → browser lets JS read the response ✓', from: 'browser', to: 'app', color: () => css('--canvas-server'), active: ['browser','app'] },
+  ],
+  preflight: [
+    { msg: 'JS calls fetch with DELETE method and Authorization header', from: 'app', to: 'browser', color: () => css('--canvas-origin'), active: ['app','browser'] },
+    { msg: 'Not a simple request → browser sends OPTIONS preflight first', from: 'browser', to: 'api', color: () => css('--canvas-packet'), active: ['browser','api'] },
+    { msg: 'Server responds: Allow-Methods: DELETE, Allow-Headers: Authorization', from: 'api', to: 'browser', color: () => css('--canvas-server'), active: ['api','browser'] },
+    { msg: 'Preflight passed → browser sends the real DELETE request', from: 'browser', to: 'api', color: () => css('--canvas-browser'), active: ['browser','api'] },
+    { msg: 'Server processes DELETE, responds with ACAO header', from: 'api', to: 'browser', color: () => css('--canvas-server'), active: ['api','browser'] },
+    { msg: 'JS can read the response ✓', from: 'browser', to: 'app', color: () => css('--canvas-server'), active: ['browser','app'] },
+  ],
+  blocked: [
+    { msg: 'JS on evil.com calls fetch("https://api.com/user-data", {credentials})', from: 'app', to: 'browser', color: () => css('--canvas-blocked'), active: ['app','browser'], nodeOverride: {app: {label:'evil.com', sub:'(attacker)'}} },
+    { msg: 'Browser sends GET with Origin: https://evil.com + cookies', from: 'browser', to: 'api', color: () => css('--canvas-blocked'), active: ['browser','api'] },
+    { msg: 'Server responds with ACAO: https://app.com (not evil.com)', from: 'api', to: 'browser', color: () => css('--canvas-server'), active: ['api','browser'] },
+    { msg: 'Origin mismatch → browser BLOCKS JS from reading response ✗', from: 'browser', to: 'browser', color: () => css('--canvas-blocked'), active: ['browser'], final: 'blocked' },
+  ],
+};
+
+let currentScenario = null;
+let currentStep = -1;
+let animProgress = 0;
+let animating = false;
+let animFrame = null;
+
+function getNode(id) { return nodes.find(n => n.id === id); }
+
+function isLight(hex) {
+  const c = hex.replace('#','');
+  if (c.length < 6) return true;
+  const r = parseInt(c.substr(0,2),16), g = parseInt(c.substr(2,2),16), b = parseInt(c.substr(4,2),16);
+  return (r*299 + g*587 + b*114) / 1000 > 160;
+}
+
+function drawNode(n, highlight, override) {
+  const colors = {
+    app: css('--canvas-origin'),
+    browser: css('--canvas-browser'),
+    api: css('--canvas-server'),
+  };
+  const c = colors[n.id] || css('--canvas-text');
+  const r = 30;
+  const label = override?.label || n.label;
+  const sub = override?.sub || n.sub;
+
+  ctx.save();
+  if (highlight) { ctx.shadowColor = c; ctx.shadowBlur = 18; }
+  ctx.beginPath();
+  ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+  ctx.fillStyle = highlight ? c : 'transparent';
+  ctx.fill();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = c;
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.fillStyle = highlight ? (isLight(c) ? '#000' : '#fff') : css('--canvas-text');
+  ctx.font = '700 11px "Space Mono", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(label, n.x, n.y + 4);
+
+  ctx.fillStyle = css('--text-muted');
+  ctx.font = '400 10px "DM Sans", sans-serif';
+  ctx.fillText(sub, n.x, n.y + r + 16);
+}
+
+function drawPacket(fromN, toN, t, color) {
+  if (fromN.id === toN.id) return;
+  const x = fromN.x + (toN.x - fromN.x) * t;
+  const y = fromN.y + (toN.y - fromN.y) * t;
+  ctx.save();
+  ctx.shadowColor = color; ctx.shadowBlur = 12;
+  ctx.beginPath();
+  ctx.arc(x, y, 8, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.restore();
+  for (let i = 1; i <= 4; i++) {
+    const tt = Math.max(0, t - i * 0.04);
+    const tx = fromN.x + (toN.x - fromN.x) * tt;
+    const ty = fromN.y + (toN.y - fromN.y) * tt;
+    ctx.beginPath();
+    ctx.arc(tx, ty, 8 * (1 - i * 0.2), 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.3 - i * 0.06;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+}
+
+function drawLine(a, b) {
+  ctx.save();
+  ctx.strokeStyle = css('--canvas-line');
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(a.x, a.y);
+  ctx.lineTo(b.x, b.y);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function render() {
+  ctx.clearRect(0, 0, W, H);
+  drawLine(getNode('app'), getNode('browser'));
+  drawLine(getNode('browser'), getNode('api'));
+
+  const steps = currentScenario ? scenarios[currentScenario] : null;
+  const step = steps && currentStep >= 0 && currentStep < steps.length ? steps[currentStep] : null;
+  const activeSet = step ? new Set(step.active) : new Set();
+  const overrides = step?.nodeOverride || {};
+
+  nodes.forEach(n => drawNode(n, activeSet.has(n.id), overrides[n.id]));
+
+  if (step && animating && step.from !== step.to) {
+    drawPacket(getNode(step.from), getNode(step.to), animProgress, step.color());
+  }
+
+  // Final state visuals
+  if (step && !animating && step.final === 'blocked') {
+    const bN = getNode('browser');
+    const pulse = (Math.sin(performance.now() / 300) + 1) / 2;
+    ctx.save();
+    ctx.globalAlpha = 0.15 + pulse * 0.15;
+    ctx.beginPath();
+    ctx.arc(bN.x, bN.y, 50, 0, Math.PI * 2);
+    ctx.fillStyle = css('--canvas-blocked');
+    ctx.fill();
+    ctx.restore();
+    // X mark
+    ctx.save();
+    ctx.strokeStyle = css('--canvas-blocked');
+    ctx.lineWidth = 3;
+    ctx.globalAlpha = 0.6 + pulse * 0.4;
+    ctx.beginPath();
+    ctx.moveTo(bN.x - 12, bN.y - 45);
+    ctx.lineTo(bN.x + 12, bN.y - 21);
+    ctx.moveTo(bN.x + 12, bN.y - 45);
+    ctx.lineTo(bN.x - 12, bN.y - 21);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  if (steps && step && !animating && currentStep === steps.length - 1 && !step.final) {
+    const aN = getNode('app');
+    const pulse = (Math.sin(performance.now() / 300) + 1) / 2;
+    ctx.save();
+    ctx.globalAlpha = 0.15 + pulse * 0.15;
+    ctx.beginPath();
+    ctx.arc(aN.x, aN.y, 50, 0, Math.PI * 2);
+    ctx.fillStyle = css('--canvas-server');
+    ctx.fill();
+    ctx.restore();
+    // Checkmark
+    ctx.save();
+    ctx.strokeStyle = css('--canvas-server');
+    ctx.lineWidth = 3;
+    ctx.globalAlpha = 0.6 + pulse * 0.4;
+    ctx.beginPath();
+    ctx.moveTo(aN.x - 10, aN.y - 33);
+    ctx.lineTo(aN.x - 2, aN.y - 23);
+    ctx.lineTo(aN.x + 12, aN.y - 43);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function animateStep() {
+  if (!animating) return;
+  animProgress += 0.018;
+  if (animProgress >= 1) {
+    animProgress = 1;
+    animating = false;
+    render();
+    const steps = scenarios[currentScenario];
+    setTimeout(() => {
+      if (currentStep < steps.length - 1) {
+        currentStep++;
+        stepLabel.textContent = `Step ${currentStep + 1}: ${steps[currentStep].msg}`;
+        animProgress = 0;
+        animating = true;
+        animFrame = requestAnimationFrame(tick);
+      }
+    }, 900);
+    return;
+  }
+  render();
+  animFrame = requestAnimationFrame(tick);
+}
+
+function tick() {
+  animateStep();
+  const steps = currentScenario ? scenarios[currentScenario] : null;
+  if (steps && !animating && currentStep === steps.length - 1) {
+    render();
+    animFrame = requestAnimationFrame(tick);
+  }
+}
+
+function startScenario(name) {
+  cancelAnimationFrame(animFrame);
+  currentScenario = name;
+  currentStep = 0;
+  animProgress = 0;
+  animating = true;
+  const steps = scenarios[name];
+  stepLabel.textContent = `Step 1: ${steps[0].msg}`;
+  document.querySelectorAll('.diagram-controls button').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-' + name)?.classList.add('active');
+  animFrame = requestAnimationFrame(tick);
+}
+
+function resetAnim() {
+  cancelAnimationFrame(animFrame);
+  currentScenario = null;
+  currentStep = -1;
+  animProgress = 0;
+  animating = false;
+  stepLabel.textContent = 'Choose a scenario to see the CORS flow';
+  document.querySelectorAll('.diagram-controls button').forEach(b => b.classList.remove('active'));
+  render();
+}
+
+document.getElementById('btn-simple').addEventListener('click', () => startScenario('simple'));
+document.getElementById('btn-preflight').addEventListener('click', () => startScenario('preflight'));
+document.getElementById('btn-blocked').addEventListener('click', () => startScenario('blocked'));
+document.getElementById('btn-reset').addEventListener('click', resetAnim);
+
+render();
+setTimeout(() => startScenario('simple'), 600);
+
+const observer = new MutationObserver(() => render());
+observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => render());
+</script>
