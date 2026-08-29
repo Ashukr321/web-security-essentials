@@ -1,0 +1,675 @@
+<title>Supply Chain Attacks Explained</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700&display=swap">
+
+<style>
+  :root {
+    --bg: #f5f2eb;
+    --bg-card: #ffffff;
+    --bg-card-alt: #edeae3;
+    --bg-code: #e8e4dc;
+    --text: #1a1a2e;
+    --text-secondary: #5a6172;
+    --text-muted: #8b92a0;
+    --border: #d5d0c7;
+    --border-subtle: #e5e1d9;
+    --accent: #8b5cf6;
+    --accent-bg: #f3f0ff;
+    --accent-glow: rgba(139,92,246,0.15);
+    --attack: #e84057;
+    --attack-bg: #fde8eb;
+    --defense: #22c9a0;
+    --defense-bg: #e4f8f2;
+    --warn: #f0a84a;
+    --warn-bg: #fdf3e0;
+    --browser: #3b82f6;
+    --browser-bg: #e8f0fe;
+    --hero-gradient: linear-gradient(165deg, #f5f2eb 0%, #ede8df 50%, #e8e4dc 100%);
+    --shadow-sm: 0 1px 3px rgba(26,26,46,0.06);
+    --shadow-md: 0 4px 16px rgba(26,26,46,0.08);
+    --canvas-app: #3b82f6;
+    --canvas-pkg: #8b5cf6;
+    --canvas-attacker: #e84057;
+    --canvas-cdn: #f0a84a;
+    --canvas-safe: #22c9a0;
+    --canvas-line: #d5d0c7;
+    --canvas-text: #1a1a2e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0c1222; --bg-card: #141c30; --bg-card-alt: #1a2340; --bg-code: #111827;
+      --text: #e4e7ed; --text-secondary: #9ca3b4; --text-muted: #64708a;
+      --border: #253050; --border-subtle: #1e2a45;
+      --accent: #a78bfa; --accent-bg: rgba(167,139,250,0.1); --accent-glow: rgba(167,139,250,0.2);
+      --attack: #f06275; --attack-bg: rgba(240,98,117,0.12);
+      --defense: #3cddb5; --defense-bg: rgba(60,221,181,0.1);
+      --warn: #f5b863; --warn-bg: rgba(245,184,99,0.1);
+      --browser: #60a5fa; --browser-bg: rgba(96,165,250,0.1);
+      --hero-gradient: linear-gradient(165deg, #0c1222 0%, #111b2e 50%, #0f172a 100%);
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.3); --shadow-md: 0 4px 16px rgba(0,0,0,0.35);
+      --canvas-app: #60a5fa; --canvas-pkg: #a78bfa; --canvas-attacker: #f06275;
+      --canvas-cdn: #f5b863; --canvas-safe: #3cddb5; --canvas-line: #253050; --canvas-text: #e4e7ed;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0c1222; --bg-card: #141c30; --bg-card-alt: #1a2340; --bg-code: #111827;
+    --text: #e4e7ed; --text-secondary: #9ca3b4; --text-muted: #64708a;
+    --border: #253050; --border-subtle: #1e2a45;
+    --accent: #a78bfa; --accent-bg: rgba(167,139,250,0.1); --accent-glow: rgba(167,139,250,0.2);
+    --attack: #f06275; --attack-bg: rgba(240,98,117,0.12);
+    --defense: #3cddb5; --defense-bg: rgba(60,221,181,0.1);
+    --warn: #f5b863; --warn-bg: rgba(245,184,99,0.1);
+    --browser: #60a5fa; --browser-bg: rgba(96,165,250,0.1);
+    --hero-gradient: linear-gradient(165deg, #0c1222 0%, #111b2e 50%, #0f172a 100%);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.3); --shadow-md: 0 4px 16px rgba(0,0,0,0.35);
+    --canvas-app: #60a5fa; --canvas-pkg: #a78bfa; --canvas-attacker: #f06275;
+    --canvas-cdn: #f5b863; --canvas-safe: #3cddb5; --canvas-line: #253050; --canvas-text: #e4e7ed;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', system-ui, sans-serif; font-size: 16px; line-height: 1.65; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  h1, h2, h3 { font-family: 'Space Mono', monospace; text-wrap: balance; line-height: 1.2; }
+  h1 { font-size: clamp(1.8rem,4.5vw,3rem); font-weight: 700; letter-spacing: -0.02em; }
+  h2 { font-size: clamp(1.3rem,3vw,1.75rem); font-weight: 700; letter-spacing: -0.01em; }
+  h3 { font-size: 1.05rem; font-weight: 700; }
+  .label { font-family: 'Space Mono', monospace; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); }
+  code { font-family: 'Space Mono', monospace; font-size: 0.85em; background: var(--bg-code); padding: 0.15em 0.4em; border-radius: 4px; }
+  .container { max-width: 960px; margin: 0 auto; padding: 0 clamp(1rem,4vw,2rem); }
+  section { padding: clamp(3rem,6vw,5rem) 0; }
+  section + section { border-top: 1px solid var(--border-subtle); }
+
+  /* Hero */
+  .hero { background: var(--hero-gradient); padding: clamp(3rem,8vw,5rem) 0 clamp(2rem,5vw,3rem); text-align: center; border-bottom: 1px solid var(--border); }
+  .hero-eyebrow { display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 1.25rem; padding: 0.35rem 0.85rem; background: var(--accent-bg); color: var(--accent); border: 1px solid var(--accent); border-radius: 100px; font-family: 'Space Mono', monospace; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+  .hero-eyebrow .dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: pulse-dot 2s ease-in-out infinite; }
+  @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.4)} }
+  .hero h1 { margin-bottom: 1rem; }
+  .hero-sub { font-size: clamp(1rem,2vw,1.15rem); color: var(--text-secondary); max-width: 640px; margin: 0 auto 2.5rem; }
+
+  /* Canvas */
+  .diagram-wrap { position: relative; max-width: 720px; margin: 0 auto; border-radius: 12px; overflow: hidden; background: var(--bg-card); border: 1px solid var(--border); box-shadow: var(--shadow-md); }
+  .diagram-wrap canvas { display: block; width: 100%; height: auto; }
+  .diagram-controls { display: flex; justify-content: center; gap: 0.5rem; padding: 0.75rem 1rem; border-top: 1px solid var(--border-subtle); background: var(--bg-card-alt); flex-wrap: wrap; }
+  .diagram-controls button { font-family: 'Space Mono', monospace; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; padding: 0.4rem 0.85rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-card); color: var(--text-secondary); cursor: pointer; transition: all 0.2s; }
+  .diagram-controls button:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+  .diagram-controls button.active { border-color: var(--accent); color: #fff; background: var(--accent); }
+  .step-label { text-align: center; padding: 0.75rem 1rem 0; font-family: 'Space Mono', monospace; font-size: 0.76rem; color: var(--text-secondary); min-height: 2.8rem; line-height: 1.4; }
+
+  /* Section header */
+  .section-header { margin-bottom: 2.5rem; }
+  .section-header .label { margin-bottom: 0.5rem; display: block; }
+  .section-header p { color: var(--text-secondary); max-width: 560px; margin-top: 0.5rem; }
+
+  /* Attack vector cards */
+  .vectors-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 1rem; }
+  @media (max-width: 600px) { .vectors-grid { grid-template-columns: 1fr; } }
+  .vector-card { padding: 1.25rem; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-card); transition: all 0.25s; border-left: 3px solid var(--attack); }
+  .vector-card:hover { border-color: var(--attack); box-shadow: 0 0 0 1px var(--attack), var(--shadow-md); transform: translateY(-1px); }
+  .vector-card h3 { font-size: 0.9rem; margin-bottom: 0.4rem; }
+  .vector-card p { font-size: 0.84rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.5rem; }
+  .vector-card .code-block { font-family: 'Space Mono', monospace; font-size: 0.73rem; background: var(--bg-code); padding: 0.5rem 0.75rem; border-radius: 6px; overflow-x: auto; white-space: pre; color: var(--attack); line-height: 1.5; }
+  .vector-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.5rem; }
+  .vector-tag { font-family: 'Space Mono', monospace; font-size: 0.6rem; letter-spacing: 0.04em; padding: 0.15rem 0.5rem; border-radius: 3px; font-weight: 700; }
+  .vector-tag.real { background: var(--attack-bg); color: var(--attack); border: 1px solid var(--attack); }
+  .vector-tag.impact { background: var(--warn-bg); color: var(--warn); border: 1px solid var(--warn); }
+
+  /* Case studies */
+  .case-grid { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .case-item { display: grid; grid-template-columns: 100px 1fr; background: var(--bg-card); border-bottom: 1px solid var(--border-subtle); transition: background 0.2s; }
+  .case-item:last-child { border-bottom: none; }
+  .case-item:hover { background: var(--bg-card-alt); }
+  .case-year { display: flex; align-items: center; justify-content: center; font-family: 'Space Mono', monospace; font-size: 0.85rem; font-weight: 700; color: var(--accent); border-right: 1px solid var(--border); background: var(--accent-bg); }
+  .case-content { padding: 1rem 1.25rem; }
+  .case-content h3 { font-size: 0.92rem; margin-bottom: 0.25rem; }
+  .case-content p { font-size: 0.84rem; color: var(--text-secondary); line-height: 1.5; }
+
+  /* Trust tree */
+  .trust-tree { max-width: 500px; margin: 0 auto; padding: 1.5rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; }
+  .tree-node { padding: 0.3rem 0; font-family: 'Space Mono', monospace; font-size: 0.82rem; }
+  .tree-node .indent { color: var(--border); }
+  .tree-node .pkg { color: var(--accent); font-weight: 700; }
+  .tree-node .pkg.you { color: var(--browser); }
+  .tree-node .pkg.danger { color: var(--attack); }
+  .tree-node .note { color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-size: 0.78rem; }
+
+  /* Defense layers */
+  .defense-stack { display: flex; flex-direction: column; max-width: 640px; margin: 0 auto; }
+  .defense-layer { position: relative; padding: 1.25rem 1.5rem 1.25rem 4.5rem; border: 1px solid var(--border); background: var(--bg-card); transition: all 0.25s; }
+  .defense-layer:first-child { border-radius: 12px 12px 0 0; }
+  .defense-layer:last-child { border-radius: 0 0 12px 12px; }
+  .defense-layer + .defense-layer { border-top: none; }
+  .defense-layer:hover { background: var(--defense-bg); border-color: var(--defense); z-index: 1; }
+  .defense-layer:hover + .defense-layer { border-top-color: var(--defense); }
+  .defense-rank { position: absolute; left: 0; top: 0; bottom: 0; width: 3.5rem; display: flex; align-items: center; justify-content: center; font-family: 'Space Mono', monospace; font-size: 0.75rem; font-weight: 700; color: var(--defense); border-right: 1px solid var(--border); background: var(--defense-bg); }
+  .defense-layer h3 { font-size: 0.95rem; margin-bottom: 0.25rem; }
+  .defense-layer p { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; }
+  .defense-layer code { font-size: 0.78rem; }
+
+  /* SRI demo */
+  .sri-demo { max-width: 640px; margin: 0 auto; padding: 1.5rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; }
+  .sri-demo .code-block { font-family: 'Space Mono', monospace; font-size: 0.72rem; background: var(--bg-code); padding: 0.75rem 1rem; border-radius: 6px; overflow-x: auto; white-space: pre; line-height: 1.6; color: var(--text); margin-bottom: 1rem; }
+  .sri-demo .code-block .attr { color: var(--accent); }
+  .sri-demo .code-block .val { color: var(--defense); }
+  .sri-demo .code-block .tag { color: var(--browser); }
+  .sri-steps { display: flex; flex-direction: column; gap: 0.5rem; }
+  .sri-step { display: flex; gap: 0.75rem; align-items: baseline; font-size: 0.85rem; color: var(--text-secondary); }
+  .sri-step .num { font-family: 'Space Mono', monospace; font-weight: 700; font-size: 0.75rem; color: var(--defense); flex-shrink: 0; }
+
+  /* Q&A */
+  .qa-list { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .qa-item { border-bottom: 1px solid var(--border-subtle); background: var(--bg-card); }
+  .qa-item:last-child { border-bottom: none; }
+  .qa-question { display: flex; align-items: center; gap: 0.75rem; padding: 1rem 1.25rem; cursor: pointer; user-select: none; font-weight: 600; font-size: 0.92rem; transition: background 0.15s; border: none; background: none; color: var(--text); width: 100%; text-align: left; font-family: inherit; line-height: 1.4; }
+  .qa-question:hover { background: var(--bg-card-alt); }
+  .qa-chevron { flex-shrink: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; transition: transform 0.25s; color: var(--text-muted); }
+  .qa-item.open .qa-chevron { transform: rotate(90deg); }
+  .qa-answer { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+  .qa-answer-inner { padding: 0 1.25rem 1rem 3rem; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6; }
+
+  .takeaway { background: var(--bg-card); border: 1px solid var(--border); border-left: 3px solid var(--defense); border-radius: 0 10px 10px 0; padding: 1.5rem 1.75rem; margin-top: 2rem; }
+  .takeaway p { font-size: 0.95rem; line-height: 1.65; }
+  .takeaway strong { color: var(--text); }
+
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+</style>
+
+<!-- ═══════════════ HERO ═══════════════ -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-eyebrow"><span class="dot"></span> SUPPLY CHAIN</div>
+    <h1>Supply Chain Attacks</h1>
+    <p class="hero-sub">Why attack your code when they can attack your dependencies? One compromised package can cascade to thousands of applications.</p>
+
+    <div class="diagram-wrap">
+      <div class="step-label" id="step-label">Choose an attack scenario</div>
+      <canvas id="main-canvas" width="1440" height="640"></canvas>
+      <div class="diagram-controls">
+        <button id="btn-pkg">Package Hijack</button>
+        <button id="btn-confusion">Dep Confusion</button>
+        <button id="btn-cdn">CDN Compromise</button>
+        <button id="btn-reset">Reset</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ TRUST TREE ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">The problem</span>
+      <h2>The transitive trust graph</h2>
+      <p>You trust one package. But you're running code from every package it depends on — and every package <em>they</em> depend on.</p>
+    </div>
+
+    <div class="trust-tree">
+      <div class="tree-node"><span class="pkg you">Your App</span> <span class="note">— you wrote this</span></div>
+      <div class="tree-node"><span class="indent">├── </span><span class="pkg">express</span> <span class="note">— you chose this</span></div>
+      <div class="tree-node"><span class="indent">│   ├── </span><span class="pkg">body-parser</span> <span class="note">— express chose this</span></div>
+      <div class="tree-node"><span class="indent">│   │   └── </span><span class="pkg">raw-body</span> <span class="note">— you've never seen this</span></div>
+      <div class="tree-node"><span class="indent">│   │       └── </span><span class="pkg danger">unpipe</span> <span class="note">— compromised? you'd never know</span></div>
+      <div class="tree-node"><span class="indent">│   └── </span><span class="pkg">cookie</span></div>
+      <div class="tree-node"><span class="indent">├── </span><span class="pkg">jsonwebtoken</span></div>
+      <div class="tree-node"><span class="indent">│   └── </span><span class="pkg">jws</span></div>
+      <div class="tree-node"><span class="indent">│       └── </span><span class="pkg danger">safe-buffer</span> <span class="note">— 1 maintainer, no 2FA</span></div>
+      <div class="tree-node"><span class="indent">└── </span><span class="pkg">analytics-sdk</span> <span class="note">— reads your entire DOM</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ ATTACK VECTORS ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">Attack surface</span>
+      <h2>How supply chains get compromised</h2>
+    </div>
+
+    <div class="vectors-grid">
+      <div class="vector-card">
+        <h3>Package Account Takeover</h3>
+        <p>Attacker gains access to a maintainer's npm account (phishing, leaked token, no 2FA) and publishes a malicious version.</p>
+        <div class="vector-tags">
+          <span class="vector-tag real">ua-parser-js 2021</span>
+          <span class="vector-tag impact">7M WEEKLY DL</span>
+        </div>
+      </div>
+
+      <div class="vector-card">
+        <h3>Dependency Confusion</h3>
+        <p>Public package with same name as your private one. Higher version number wins — installs attacker's code instead.</p>
+        <div class="code-block">Internal: @co/utils v1.2.0
+Public:   utils v99.0.0  ← wins</div>
+        <div class="vector-tags">
+          <span class="vector-tag real">Apple/Microsoft 2021</span>
+        </div>
+      </div>
+
+      <div class="vector-card">
+        <h3>Typosquatting</h3>
+        <p><code>lodash</code> → <code>1odash</code>, <code>cross-env</code> → <code>crossenv</code>. One typo installs malware instead of the real package.</p>
+        <div class="vector-tags">
+          <span class="vector-tag real">crossenv 2017</span>
+          <span class="vector-tag impact">STOLE ENV VARS</span>
+        </div>
+      </div>
+
+      <div class="vector-card">
+        <h3>Maintainer Social Engineering</h3>
+        <p>Attacker befriends the maintainer, takes over ownership, then adds malicious code in a transitive dependency.</p>
+        <div class="vector-tags">
+          <span class="vector-tag real">event-stream 2018</span>
+          <span class="vector-tag impact">8M WEEKLY DL</span>
+        </div>
+      </div>
+
+      <div class="vector-card">
+        <h3>CDN/Script Compromise</h3>
+        <p>Third-party analytics, chat, or ad script gets compromised. Every site loading it now has a skimmer or backdoor.</p>
+        <div class="vector-tags">
+          <span class="vector-tag real">British Airways 2018</span>
+          <span class="vector-tag impact">380K CARDS STOLEN</span>
+        </div>
+      </div>
+
+      <div class="vector-card">
+        <h3>Protestware / Sabotage</h3>
+        <p>Maintainer intentionally breaks their own package — infinite loops, file wiping, or political targeting.</p>
+        <div class="vector-tags">
+          <span class="vector-tag real">colors/faker 2022</span>
+          <span class="vector-tag real">node-ipc 2022</span>
+        </div>
+      </div>
+
+      <div class="vector-card">
+        <h3>Build Pipeline Attack</h3>
+        <p>Compromised CI tool, GitHub Action, or build plugin. Reads secrets during build, injects code into production bundles.</p>
+        <div class="vector-tags">
+          <span class="vector-tag real">Codecov 2021</span>
+          <span class="vector-tag impact">2 MONTHS UNDETECTED</span>
+        </div>
+      </div>
+
+      <div class="vector-card">
+        <h3>Magecart (Web Skimming)</h3>
+        <p>Card-skimming JS injected via compromised tag manager or third-party script. Captures payment data on checkout pages.</p>
+        <div class="vector-tags">
+          <span class="vector-tag real">Ticketmaster 2018</span>
+          <span class="vector-tag impact">570+ INCIDENTS/YR</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ CASE STUDIES ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">Real incidents</span>
+      <h2>Notable supply chain attacks</h2>
+    </div>
+
+    <div class="case-grid">
+      <div class="case-item">
+        <div class="case-year">2017</div>
+        <div class="case-content">
+          <h3>crossenv (typosquat)</h3>
+          <p>Typosquat of <code>cross-env</code> — exfiltrated environment variables (npm tokens, AWS keys) from every user who installed it.</p>
+        </div>
+      </div>
+      <div class="case-item">
+        <div class="case-year">2018</div>
+        <div class="case-content">
+          <h3>event-stream → flatmap-stream</h3>
+          <p>New maintainer added encrypted payload targeting the Copay Bitcoin wallet. Stole crypto private keys. 8M weekly downloads, undetected for 2 months.</p>
+        </div>
+      </div>
+      <div class="case-item">
+        <div class="case-year">2018</div>
+        <div class="case-content">
+          <h3>British Airways (Magecart)</h3>
+          <p>Modified Modernizr script on ba.com captured 380,000 payment cards over 15 days. Resulted in a £20M GDPR fine.</p>
+        </div>
+      </div>
+      <div class="case-item">
+        <div class="case-year">2021</div>
+        <div class="case-content">
+          <h3>Codecov Bash Uploader</h3>
+          <p>Compromised CI script exfiltrated environment variables (secrets, tokens, keys) from thousands of companies for 2 months before detection.</p>
+        </div>
+      </div>
+      <div class="case-item">
+        <div class="case-year">2021</div>
+        <div class="case-content">
+          <h3>Dependency Confusion (research)</h3>
+          <p>Alex Birsan demonstrated the attack against Apple, Microsoft, PayPal, Tesla, Uber — all vulnerable to public packages with internal names.</p>
+        </div>
+      </div>
+      <div class="case-item">
+        <div class="case-year">2022</div>
+        <div class="case-content">
+          <h3>colors / faker (protestware)</h3>
+          <p>Maintainer intentionally added infinite loop to <code>colors</code> and deleted <code>faker</code>. Broke thousands of projects including AWS CDK.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ SRI ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">Key defense</span>
+      <h2>Subresource Integrity (SRI)</h2>
+      <p>Hash-verify every external script before the browser executes it. If the CDN is compromised, the script is blocked.</p>
+    </div>
+
+    <div class="sri-demo">
+      <div class="code-block"><span class="tag">&lt;script</span> <span class="attr">src</span>="https://cdn.example.com/lib.js"
+  <span class="attr">integrity</span>="<span class="val">sha384-oqVuAfXRKap7fdgc...</span>"
+  <span class="attr">crossorigin</span>="anonymous"<span class="tag">&gt;&lt;/script&gt;</span></div>
+      <div class="sri-steps">
+        <div class="sri-step"><span class="num">1</span> Browser downloads the script from the CDN</div>
+        <div class="sri-step"><span class="num">2</span> Computes SHA-384 hash of the downloaded content</div>
+        <div class="sri-step"><span class="num">3</span> Compares with the <code>integrity</code> attribute value</div>
+        <div class="sri-step"><span class="num">4</span> Match → script executes. Mismatch → blocked (network error)</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ DEFENSES ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">Defense layers</span>
+      <h2>Supply chain hardening</h2>
+    </div>
+
+    <div class="defense-stack">
+      <div class="defense-layer">
+        <div class="defense-rank">L1</div>
+        <h3>Lock files + npm ci</h3>
+        <p>Pin exact versions with integrity hashes. <code>npm ci</code> in CI verifies hashes and fails on mismatch. Never <code>npm install</code> in production builds.</p>
+      </div>
+      <div class="defense-layer">
+        <div class="defense-rank">L2</div>
+        <h3>Scoped packages + registry config</h3>
+        <p>Use <code>@company/pkg</code> scoping. Set <code>.npmrc</code> to resolve private scopes from your private registry only — prevents dependency confusion.</p>
+      </div>
+      <div class="defense-layer">
+        <div class="defense-rank">L3</div>
+        <h3>SRI for external scripts</h3>
+        <p><code>integrity="sha384-..."</code> on every <code>&lt;script&gt;</code> and <code>&lt;link&gt;</code> from CDNs. Browser blocks modified files.</p>
+      </div>
+      <div class="defense-layer">
+        <div class="defense-rank">L4</div>
+        <h3>CSP (Content Security Policy)</h3>
+        <p>Whitelist which domains can serve scripts. <code>script-src 'self' https://trusted-cdn.com</code> blocks injected scripts from unknown origins.</p>
+      </div>
+      <div class="defense-layer">
+        <div class="defense-rank">L5</div>
+        <h3>Automated scanning</h3>
+        <p><code>npm audit</code>, Snyk, Socket.dev — detect known vulnerabilities, suspicious install scripts, and unexpected network access in dependencies.</p>
+      </div>
+      <div class="defense-layer">
+        <div class="defense-rank">L6</div>
+        <h3>Pin CI actions by SHA</h3>
+        <p><code>uses: actions/checkout@a1b2c3</code> not <code>@v3</code>. A tag can be moved to point at malicious code; a commit SHA is immutable.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ INTERVIEW Q&A ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">Interview prep</span>
+      <h2>Quick-fire questions</h2>
+    </div>
+
+    <div class="qa-list" id="qa-list">
+      <div class="qa-item">
+        <button class="qa-question"><span class="qa-chevron"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>What is a supply chain attack?</button>
+        <div class="qa-answer"><div class="qa-answer-inner">Compromising a dependency, tool, or third-party service that your application relies on — instead of attacking the application directly. The attacker's code runs with your application's privileges because it's loaded as a trusted component. The blast radius is massive: one compromised package can affect every application that depends on it.</div></div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-question"><span class="qa-chevron"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>What is dependency confusion?</button>
+        <div class="qa-answer"><div class="qa-answer-inner">An attacker publishes a public package with the same name as your private/internal package but with a higher version number. If your package manager checks both registries, it may prefer the higher version from the public registry. The fix: use scoped packages (<code>@company/pkg</code>) and configure <code>.npmrc</code> to resolve your scope exclusively from your private registry.</div></div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-question"><span class="qa-chevron"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>What is SRI and what does it protect against?</button>
+        <div class="qa-answer"><div class="qa-answer-inner"><strong>Subresource Integrity</strong> — a cryptographic hash in the <code>integrity</code> attribute of <code>&lt;script&gt;</code> or <code>&lt;link&gt;</code> tags. The browser computes the hash of the downloaded file and compares it. If the CDN serves modified content (compromised, injected, tampered), the hash won't match and the browser <strong>refuses to execute the script</strong>. It protects against CDN compromise and MITM modification of external resources.</div></div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-question"><span class="qa-chevron"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Why npm ci instead of npm install in CI?</button>
+        <div class="qa-answer"><div class="qa-answer-inner"><code>npm ci</code> installs from the lockfile exactly — no dependency resolution, no version range matching. It verifies integrity hashes for every package, deletes <code>node_modules</code> first (clean slate), and fails if <code>package-lock.json</code> is out of sync with <code>package.json</code>. <code>npm install</code> may resolve different versions, may not verify hashes, and can silently update the lockfile. In CI/CD, deterministic + verified = safe.</div></div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-question"><span class="qa-chevron"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>What can a third-party script do on your page?</button>
+        <div class="qa-answer"><div class="qa-answer-inner">Everything your own JavaScript can do: read the entire DOM (form inputs, user data), access cookies (if not HttpOnly), make network requests to any server (exfiltrate data), modify the page (inject fake forms, redirect users), access localStorage/sessionStorage, register Service Workers for persistent control, and mine cryptocurrency. A third-party script runs with the same origin privileges as your own code. That's why CSP, SRI, and sandboxed iframes are critical.</div></div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-question"><span class="qa-chevron"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>What is Magecart?</button>
+        <div class="qa-answer"><div class="qa-answer-inner">A class of web-skimming attacks where card-stealing JavaScript is injected into e-commerce checkout pages. The injection comes via compromised third-party scripts (analytics, marketing, chat widgets) or tag managers. The skimmer captures payment form data (card number, CVV, expiry) and sends it to the attacker's server. The original payment still processes — neither the user nor the merchant notices. British Airways lost 380K cards in 15 days this way.</div></div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-question"><span class="qa-chevron"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>How do you prevent dependency confusion?</button>
+        <div class="qa-answer"><div class="qa-answer-inner">Three layers: (1) Use <strong>scoped packages</strong> — <code>@company/auth-utils</code> can't collide with unscoped public names. (2) Configure <code>.npmrc</code> to resolve your scope exclusively from your private registry: <code>@company:registry=https://registry.internal.com/</code>. (3) Claim your internal package names on the public registry as empty placeholder packages so attackers can't. Alex Birsan's research showed this affected Apple, Microsoft, and Tesla — it's a real and common gap.</div></div>
+      </div>
+    </div>
+
+    <div class="takeaway">
+      <p><strong>Key takeaway:</strong> You don't control your dependencies — you trust them. Every npm package, CDN script, and build tool is an attack surface. Lock files pin versions, SRI verifies content, CSP limits execution, and scoped packages prevent confusion. The question isn't whether a supply chain attack will happen — it's whether your defenses catch it before it reaches production.</p>
+    </div>
+  </div>
+</section>
+
+<script>
+// ── Q&A Accordion ──
+document.getElementById('qa-list').addEventListener('click', e => {
+  const btn = e.target.closest('.qa-question');
+  if (!btn) return;
+  const item = btn.parentElement;
+  const answer = item.querySelector('.qa-answer');
+  const inner = answer.querySelector('.qa-answer-inner');
+  const isOpen = item.classList.contains('open');
+  document.querySelectorAll('.qa-item.open').forEach(el => {
+    el.classList.remove('open');
+    el.querySelector('.qa-answer').style.maxHeight = '0';
+  });
+  if (!isOpen) {
+    item.classList.add('open');
+    answer.style.maxHeight = inner.scrollHeight + 'px';
+  }
+});
+
+// ── Canvas Animation ──
+const canvas = document.getElementById('main-canvas');
+const ctx = canvas.getContext('2d');
+const dpr = Math.min(window.devicePixelRatio || 1, 2);
+const W = 640, H = 300;
+canvas.width = W * dpr;
+canvas.height = H * dpr;
+canvas.style.width = '100%';
+canvas.style.height = 'auto';
+canvas.style.aspectRatio = W + '/' + H;
+ctx.scale(dpr, dpr);
+
+const stepLabel = document.getElementById('step-label');
+function css(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function isLight(hex) { const c=hex.replace('#',''); if(c.length<6) return true; return (parseInt(c.substr(0,2),16)*299+parseInt(c.substr(2,2),16)*587+parseInt(c.substr(4,2),16)*114)/1000>160; }
+
+const scenarios = {
+  pkg: {
+    nodes: [
+      { id: 'dev', x: 80, y: 150, label: 'Developer', sub: '(npm install)', color: () => css('--canvas-app') },
+      { id: 'npm', x: 320, y: 150, label: 'npm Registry', sub: '(packages)', color: () => css('--canvas-pkg') },
+      { id: 'attacker', x: 320, y: 55, label: 'Attacker', sub: '(hijacked acct)', color: () => css('--canvas-attacker') },
+      { id: 'app', x: 560, y: 150, label: 'Production', sub: '(your users)', color: () => css('--canvas-app') },
+    ],
+    steps: [
+      { msg: 'Attacker steals maintainer\'s npm credentials (phishing, leaked token)', from: 'attacker', to: 'npm', color: () => css('--canvas-attacker'), active: ['attacker','npm'] },
+      { msg: 'Publishes malicious version of popular package (e.g. ua-parser-js)', from: 'attacker', to: 'npm', color: () => css('--canvas-attacker'), active: ['attacker','npm'] },
+      { msg: 'Developer runs npm install — gets compromised version', from: 'npm', to: 'dev', color: () => css('--canvas-attacker'), active: ['npm','dev'] },
+      { msg: 'Malicious code bundled into production build', from: 'dev', to: 'app', color: () => css('--canvas-attacker'), active: ['dev','app'] },
+      { msg: 'Users\' data exfiltrated — cryptominers, credential stealers active ✗', from: 'app', to: 'attacker', color: () => css('--canvas-attacker'), active: ['app','attacker'], final: 'compromised' },
+    ],
+  },
+  confusion: {
+    nodes: [
+      { id: 'dev', x: 80, y: 150, label: 'Build System', sub: '(resolves deps)', color: () => css('--canvas-app') },
+      { id: 'private', x: 320, y: 230, label: 'Private Reg', sub: '@co/utils v1.2', color: () => css('--canvas-safe') },
+      { id: 'public', x: 320, y: 70, label: 'Public npm', sub: 'utils v99.0.0', color: () => css('--canvas-attacker') },
+      { id: 'app', x: 560, y: 150, label: 'Production', sub: '', color: () => css('--canvas-app') },
+    ],
+    steps: [
+      { msg: 'Build system needs "utils" — checks both registries', from: 'dev', to: 'private', color: () => css('--canvas-app'), active: ['dev','private','public'] },
+      { msg: 'Private: @co/utils v1.2.0.  Public: utils v99.0.0 (attacker)', from: 'public', to: 'dev', color: () => css('--canvas-attacker'), active: ['private','public'] },
+      { msg: 'Higher version wins — attacker\'s package installed!', from: 'public', to: 'dev', color: () => css('--canvas-attacker'), active: ['public','dev'] },
+      { msg: 'Install script runs: exfiltrates hostname, env vars, secrets', from: 'dev', to: 'public', color: () => css('--canvas-attacker'), active: ['dev'], final: 'exfiltrated' },
+    ],
+  },
+  cdn: {
+    nodes: [
+      { id: 'user', x: 80, y: 150, label: 'User', sub: '(browser)', color: () => css('--canvas-app') },
+      { id: 'site', x: 280, y: 150, label: 'Your Site', sub: '(loads CDN script)', color: () => css('--canvas-app') },
+      { id: 'cdn', x: 480, y: 80, label: 'CDN', sub: '(compromised)', color: () => css('--canvas-attacker') },
+      { id: 'attacker', x: 480, y: 220, label: 'Attacker', sub: '(receives data)', color: () => css('--canvas-attacker') },
+    ],
+    steps: [
+      { msg: 'User visits your site — page loads third-party script from CDN', from: 'user', to: 'site', color: () => css('--canvas-app'), active: ['user','site'] },
+      { msg: 'CDN serves modified script — card skimmer injected', from: 'cdn', to: 'site', color: () => css('--canvas-attacker'), active: ['cdn','site'] },
+      { msg: 'Skimmer reads payment form inputs as user types', from: 'site', to: 'user', color: () => css('--canvas-attacker'), active: ['site','user'] },
+      { msg: 'Card data sent to attacker\'s server — user and site see nothing ✗', from: 'site', to: 'attacker', color: () => css('--canvas-attacker'), active: ['site','attacker'], final: 'skimmed' },
+    ],
+  },
+};
+
+let curScenario = null, curStep = -1, animProg = 0, animating = false, animFrame = null;
+
+function getNode(id) { return scenarios[curScenario].nodes.find(n => n.id === id); }
+
+function drawNode(n, highlight) {
+  const c = n.color();
+  ctx.save();
+  if (highlight) { ctx.shadowColor = c; ctx.shadowBlur = 18; }
+  ctx.beginPath(); ctx.arc(n.x, n.y, 28, 0, Math.PI*2);
+  ctx.fillStyle = highlight ? c : 'transparent'; ctx.fill();
+  ctx.lineWidth = 2; ctx.strokeStyle = c; ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = highlight ? (isLight(c)?'#000':'#fff') : css('--canvas-text');
+  ctx.font = '700 10px "Space Mono", monospace'; ctx.textAlign = 'center';
+  ctx.fillText(n.label, n.x, n.y + 3);
+  ctx.fillStyle = css('--text-muted'); ctx.font = '400 9px "DM Sans", sans-serif';
+  ctx.fillText(n.sub, n.x, n.y + 44);
+}
+
+function drawPacket(from, to, t, color) {
+  if (from.id === to.id) return;
+  const x = from.x + (to.x - from.x) * t, y = from.y + (to.y - from.y) * t;
+  ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = 12;
+  ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI*2); ctx.fillStyle = color; ctx.fill();
+  ctx.restore();
+  for (let i=1;i<=3;i++) {
+    const tt=Math.max(0,t-i*0.05), tx=from.x+(to.x-from.x)*tt, ty=from.y+(to.y-from.y)*tt;
+    ctx.beginPath(); ctx.arc(tx,ty,7*(1-i*0.25),0,Math.PI*2);
+    ctx.fillStyle=color; ctx.globalAlpha=0.25-i*0.07; ctx.fill(); ctx.globalAlpha=1;
+  }
+}
+
+function drawLine(a, b) {
+  ctx.save(); ctx.strokeStyle = css('--canvas-line'); ctx.lineWidth = 1; ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); ctx.restore();
+}
+
+function render() {
+  ctx.clearRect(0,0,W,H);
+  if (!curScenario) {
+    ctx.fillStyle = css('--text-muted'); ctx.font = '400 13px "DM Sans", sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('Select a scenario above to see the attack flow', W/2, H/2);
+    return;
+  }
+  const nodes = scenarios[curScenario].nodes;
+  const steps = scenarios[curScenario].steps;
+  const step = curStep>=0 && curStep<steps.length ? steps[curStep] : null;
+  const activeSet = step ? new Set(step.active) : new Set();
+
+  for (let i=0;i<nodes.length;i++) for (let j=i+1;j<nodes.length;j++) drawLine(nodes[i], nodes[j]);
+  nodes.forEach(n => drawNode(n, activeSet.has(n.id)));
+
+  if (step && animating && step.from !== step.to) {
+    drawPacket(getNode(step.from), getNode(step.to), animProg, step.color());
+  }
+
+  if (step && !animating && step.final) {
+    const t = performance.now();
+    const pulse = (Math.sin(t/300)+1)/2;
+    const target = step.final === 'exfiltrated' ? getNode('dev') : (step.final === 'skimmed' ? getNode('attacker') : getNode('app'));
+    ctx.save(); ctx.globalAlpha = 0.15+pulse*0.15;
+    ctx.beginPath(); ctx.arc(target.x, target.y, 46, 0, Math.PI*2);
+    ctx.fillStyle = css('--canvas-attacker'); ctx.fill(); ctx.restore();
+    ctx.save(); ctx.strokeStyle=css('--canvas-attacker'); ctx.lineWidth=3; ctx.globalAlpha=0.6+pulse*0.4;
+    ctx.beginPath(); ctx.moveTo(target.x-10,target.y-42); ctx.lineTo(target.x+10,target.y-22);
+    ctx.moveTo(target.x+10,target.y-42); ctx.lineTo(target.x-10,target.y-22); ctx.stroke(); ctx.restore();
+  }
+}
+
+function animateStep() {
+  if (!animating) return;
+  animProg += 0.018;
+  if (animProg >= 1) {
+    animProg=1; animating=false; render();
+    const steps = scenarios[curScenario].steps;
+    setTimeout(() => {
+      if (curStep < steps.length-1) {
+        curStep++; stepLabel.textContent = `Step ${curStep+1}: ${steps[curStep].msg}`;
+        animProg=0; animating=true; animFrame=requestAnimationFrame(tick);
+      }
+    }, 900);
+    return;
+  }
+  render();
+  animFrame = requestAnimationFrame(tick);
+}
+
+function tick() {
+  animateStep();
+  const steps = curScenario ? scenarios[curScenario].steps : null;
+  if (steps && !animating && curStep === steps.length-1) {
+    render(); animFrame = requestAnimationFrame(tick);
+  }
+}
+
+function startScenario(name) {
+  cancelAnimationFrame(animFrame);
+  curScenario=name; curStep=0; animProg=0; animating=true;
+  stepLabel.textContent = `Step 1: ${scenarios[name].steps[0].msg}`;
+  document.querySelectorAll('.diagram-controls button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('btn-'+name)?.classList.add('active');
+  animFrame = requestAnimationFrame(tick);
+}
+
+function resetAnim() {
+  cancelAnimationFrame(animFrame);
+  curScenario=null; curStep=-1; animProg=0; animating=false;
+  stepLabel.textContent='Choose an attack scenario';
+  document.querySelectorAll('.diagram-controls button').forEach(b=>b.classList.remove('active'));
+  render();
+}
+
+document.getElementById('btn-pkg').addEventListener('click', ()=>startScenario('pkg'));
+document.getElementById('btn-confusion').addEventListener('click', ()=>startScenario('confusion'));
+document.getElementById('btn-cdn').addEventListener('click', ()=>startScenario('cdn'));
+document.getElementById('btn-reset').addEventListener('click', resetAnim);
+
+render();
+setTimeout(()=>startScenario('pkg'), 600);
+
+const observer = new MutationObserver(()=>render());
+observer.observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', ()=>render());
+</script>
