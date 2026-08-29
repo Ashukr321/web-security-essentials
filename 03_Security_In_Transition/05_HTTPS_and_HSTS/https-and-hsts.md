@@ -3,6 +3,7 @@
 ## TLS 1.3 vs TLS 1.2
 
 ### TLS 1.2 Handshake (2 round trips)
+
 ```
 Client                              Server
   |  ClientHello                       |
@@ -24,6 +25,7 @@ Client                              Server
 ```
 
 ### TLS 1.3 Handshake (1 round trip)
+
 ```
 Client                              Server
   |  ClientHello + KeyShare            |
@@ -41,6 +43,7 @@ Client                              Server
 ```
 
 **TLS 1.3 improvements:**
+
 - Removed insecure cipher suites (RSA key exchange, CBC ciphers, SHA-1)
 - Mandatory forward secrecy (ECDHE only)
 - Encrypted certificate (server cert is no longer visible to passive observers)
@@ -61,6 +64,7 @@ Root CA (built into OS/browser)
 ### Certificate Transparency (CT)
 
 All publicly trusted certificates must be logged to public CT logs. This means:
+
 - Anyone can monitor which certificates are issued for their domain
 - Misissued or fraudulent certificates are detectable
 - Browsers enforce CT: certificates without SCTs (Signed Certificate Timestamps) are rejected
@@ -68,6 +72,7 @@ All publicly trusted certificates must be logged to public CT logs. This means:
 ## HSTS Behavior in Detail
 
 ### Timeline of Protection
+
 ```
 Visit 1: http://bank.com
   → 301 redirect to https://bank.com        ← VULNERABLE WINDOW
@@ -83,6 +88,7 @@ Visit 2+: user types bank.com
 ### The 307 Internal Redirect
 
 When HSTS is active, the browser shows a `307 Internal Redirect` in DevTools network tab:
+
 - This is NOT a real network request
 - The browser rewrites the URL before any network activity
 - It's purely local — no bytes go over the wire as HTTP
@@ -90,6 +96,7 @@ When HSTS is active, the browser shows a `307 Internal Redirect` in DevTools net
 ### HSTS Preload List
 
 The preload list is a text file compiled into every major browser:
+
 - Chrome, Firefox, Safari, Edge all share the same list
 - Adding a domain takes weeks (manual review)
 - **Removing a domain takes months** — think carefully before preloading
@@ -120,6 +127,7 @@ Victim                  Attacker (MITM)              Bank Server
 ```
 
 The attacker:
+
 1. Intercepts the initial HTTP request (ARP spoofing, DNS spoofing, rogue AP)
 2. Forwards it to the real server over HTTPS
 3. Rewrites all HTTPS links in the response to HTTP
@@ -131,42 +139,51 @@ The attacker:
 ## Common Misconfigurations
 
 ### 1. Short max-age
+
 ```http
 Strict-Transport-Security: max-age=86400
 ```
+
 Only 1 day — attacker just needs to wait for it to expire.
 
 ### 2. Missing includeSubDomains
+
 ```http
 Strict-Transport-Security: max-age=31536000
 ```
+
 `http://sub.example.com` is still vulnerable to stripping.
 
 ### 3. HSTS on HTTP response
+
 ```
 http://example.com → Strict-Transport-Security: max-age=...
 ```
+
 Browsers IGNORE HSTS headers on HTTP responses (could be injected by MITM).
 
 ### 4. Mixed content on HTTPS pages
+
 ```html
 <script src="http://cdn.example.com/app.js"></script>
 ```
+
 Browser blocks active mixed content. If the script is critical, the page breaks.
 
 ### 5. No OCSP stapling
+
 Without OCSP stapling, the browser makes a separate request to the CA to check revocation. This adds latency and leaks which sites the user visits to the CA.
 
 ## Security Headers Companion
 
 HSTS works best alongside:
 
-| Header | Purpose |
-|--------|---------|
-| `Content-Security-Policy: upgrade-insecure-requests` | Auto-upgrades HTTP subresource URLs to HTTPS |
-| `X-Content-Type-Options: nosniff` | Prevents MIME-type sniffing |
-| `Referrer-Policy: strict-origin-when-cross-origin` | Limits referrer leakage |
-| `Permissions-Policy` | Restricts browser features (camera, mic, geolocation) |
+| Header                                               | Purpose                                               |
+| ---------------------------------------------------- | ----------------------------------------------------- |
+| `Content-Security-Policy: upgrade-insecure-requests` | Auto-upgrades HTTP subresource URLs to HTTPS          |
+| `X-Content-Type-Options: nosniff`                    | Prevents MIME-type sniffing                           |
+| `Referrer-Policy: strict-origin-when-cross-origin`   | Limits referrer leakage                               |
+| `Permissions-Policy`                                 | Restricts browser features (camera, mic, geolocation) |
 
 ## Testing Checklist
 
@@ -180,3 +197,6 @@ HSTS works best alongside:
 - [ ] Certificate Transparency SCTs present
 - [ ] OCSP stapling enabled
 - [ ] HTTP redirects to HTTPS (301, not 302)
+
+SSL stripping / downgrade attacks.
+Strict-Transport-Security: max-age=31536000; includeSubDomains

