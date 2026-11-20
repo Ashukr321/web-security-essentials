@@ -1,8 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Self-contained server bundle for the Docker image.
-  output: "standalone",
+  // Self-contained server bundle, only for the Docker image (the Dockerfile sets BUILD_STANDALONE).
+  // Vercel's build adapter doesn't write the trace files standalone needs, so it must stay off there.
+  output: process.env.BUILD_STANDALONE === "true" ? "standalone" : undefined,
 
   // ✏️ Add your image domains here
   images: {

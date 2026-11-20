@@ -21,7 +21,8 @@ COPY --from=deps /repo/website/node_modules ./website/node_modules
 WORKDIR /repo/website
 ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
 ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL} \
-    NEXT_TELEMETRY_DISABLED=1
+    NEXT_TELEMETRY_DISABLED=1 \
+    BUILD_STANDALONE=true
 RUN npm run build
 
 # ---- runner: minimal image, non-root ----

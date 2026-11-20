@@ -22,7 +22,7 @@ const TYPES: Record<string, string> = {
 export async function GET(_req: Request, { params }: { params: Promise<{ path: string[] }> }) {
   const rel = (await params).path.map(decodeURIComponent).join("/");
   if (!getAssetFiles().includes(rel)) return new Response("Not found", { status: 404 });
-  const data = fs.readFileSync(path.join(CONTENT_ROOT, rel));
+  const data = fs.readFileSync(/*turbopackIgnore: true*/ path.join(/*turbopackIgnore: true*/ CONTENT_ROOT, rel));
   return new Response(data, {
     headers: {
       "Content-Type": TYPES[path.extname(rel).toLowerCase()] ?? "application/octet-stream",

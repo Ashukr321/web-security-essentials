@@ -2,8 +2,9 @@ import fs from "node:fs";
 import path from "node:path";
 
 // The markdown lives in the repo root, one level above this Next.js app.
+// turbopackIgnore: every page is prerendered at build time, so the server never needs these files at runtime.
 export const CONTENT_ROOT = path.resolve(
-  process.env.CONTENT_DIR || path.join(process.cwd(), ".."),
+  /*turbopackIgnore: true*/ process.env.CONTENT_DIR || path.join(process.cwd(), ".."),
 );
 
 // Files under these folders may be served at /content/* (images, visualizations).
@@ -39,7 +40,7 @@ const titleize = (s: string) =>
     .replace(/\b\w/g, (c) => c.toUpperCase());
 
 function toDoc(rel: string, category: string, categorySlug: string): Doc {
-  const raw = fs.readFileSync(path.join(CONTENT_ROOT, rel), "utf8").replace(/\r\n/g, "\n");
+  const raw = fs.readFileSync(/*turbopackIgnore: true*/ path.join(/*turbopackIgnore: true*/ CONTENT_ROOT, rel), "utf8").replace(/\r\n/g, "\n");
   const parts = rel.split("/");
   const isReadme = /^readme\.md$/i.test(parts.at(-1)!);
   const dirParts = parts.slice(0, -1);
@@ -64,10 +65,10 @@ function toDoc(rel: string, category: string, categorySlug: string): Doc {
       .trim() ?? "";
   const description = (firstPara || `${title} — ${category}.`).slice(0, 160);
 
-  const dir = path.join(CONTENT_ROOT, ...dirParts);
+  const dir = path.join(/*turbopackIgnore: true*/ CONTENT_ROOT, ...dirParts);
   const visualizations = isReadme
     ? fs
-        .readdirSync(dir)
+        .readdirSync(/*turbopackIgnore: true*/ dir)
         .filter((f) => f.endsWith(".html"))
         .map((f) => [...dirParts, f].join("/"))
     : [];
@@ -88,7 +89,7 @@ function toDoc(rel: string, category: string, categorySlug: string): Doc {
 function walkMd(relDir: string): string[] {
   const out: string[] = [];
   const entries = fs
-    .readdirSync(path.join(CONTENT_ROOT, relDir), { withFileTypes: true })
+    .readdirSync(/*turbopackIgnore: true*/ path.join(/*turbopackIgnore: true*/ CONTENT_ROOT, relDir), { withFileTypes: true })
     .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
   // README first, then loose files, then sub-folders.
   const files = entries.filter((e) => e.isFile() && e.name.endsWith(".md"));
@@ -103,7 +104,7 @@ let cache: Category[] | null = null;
 export function getCategories(): Category[] {
   if (cache) return cache;
   const sections = fs
-    .readdirSync(CONTENT_ROOT, { withFileTypes: true })
+    .readdirSync(/*turbopackIgnore: true*/ CONTENT_ROOT, { withFileTypes: true })
     .filter((e) => e.isDirectory() && /^\d+_/.test(e.name))
     .map((e) => e.name)
     .sort();
@@ -112,7 +113,7 @@ export function getCategories(): Category[] {
     const title = titleize(dir);
     const slug = slugify(dir);
     const docs = walkMd(dir).map((rel) => toDoc(rel, title, slug));
-    if (dir.startsWith("01_") && fs.existsSync(path.join(CONTENT_ROOT, "README.md"))) {
+    if (dir.startsWith("01_") && fs.existsSync(/*turbopackIgnore: true*/ path.join(/*turbopackIgnore: true*/ CONTENT_ROOT, "README.md"))) {
       docs.unshift({ ...toDoc("README.md", title, slug), title: "Overview", slug: "overview" });
     }
     return { slug, title, docs };
@@ -133,7 +134,7 @@ export function docHrefForFile(rel: string): string | undefined {
 /** Every servable asset (svg/png/html…) in the repo, repo-relative. */
 export function getAssetFiles(rel = ""): string[] {
   const out: string[] = [];
-  for (const e of fs.readdirSync(path.join(CONTENT_ROOT, rel), { withFileTypes: true })) {
+  for (const e of fs.readdirSync(/*turbopackIgnore: true*/ path.join(/*turbopackIgnore: true*/ CONTENT_ROOT, rel), { withFileTypes: true })) {
     const p = rel ? `${rel}/${e.name}` : e.name;
     if (e.isDirectory()) {
       if (!SKIP_DIRS.has(e.name)) out.push(...getAssetFiles(p));
