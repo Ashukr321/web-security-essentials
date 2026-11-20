@@ -1,0 +1,15 @@
+services:
+  web:
+    build:
+      # Repo root, so the markdown content is inside the build context.
+      context: ..
+      dockerfile: website/Dockerfile
+      args:
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+    image: web-security-essentials:latest
+    container_name: web-security-essentials
+    ports:
+      - "${PORT:-3000}:3000"
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
