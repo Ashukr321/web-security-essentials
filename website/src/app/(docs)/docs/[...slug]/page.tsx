@@ -58,8 +58,32 @@ export default async function DocPage({ params }: Props) {
         {doc.body ? (
           <Markdown body={doc.body} file={doc.file} />
         ) : (
-          <p className="text-muted-foreground">This topic is still being written. Check back soon.</p>
+          !doc.images.length && (
+            <p className="text-muted-foreground">This topic is still being written. Check back soon.</p>
+          )
         )}
+        {doc.images.map((img) => {
+          const caption = img
+            .split("/")
+            .pop()!
+            .replace(/\.[^.]+$/, "")
+            .replace(/[_-]+/g, " ")
+            .replace(/\b(xss|csp|csrf|cors|jwt)\b/gi, (m) => m.toUpperCase())
+            .replace(/\bwebauthn\b/gi, "WebAuthn")
+            .replace(/^\w/, (c) => c.toUpperCase());
+          return (
+            <figure key={img}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`/content/${encodeURI(img)}`}
+                alt={caption}
+                loading="lazy"
+                className="mx-auto w-full rounded-lg"
+              />
+              <figcaption className="text-center">{caption}</figcaption>
+            </figure>
+          );
+        })}
       </div>
 
       {doc.visualizations.map((v) => (

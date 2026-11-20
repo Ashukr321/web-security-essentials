@@ -28,6 +28,28 @@ describe("content loader", () => {
     expect(docs.some((d) => d.title === "Concept")).toBe(false);
   });
 
+  it("shows every repo image on at least one page", () => {
+    const onPages = new Set(
+      docs.flatMap((d) => [
+        ...d.images,
+        // images the markdown itself embeds
+        ...[...d.body.matchAll(/!\[[^\]]*\]\(\s*<?([^)\s>]+)|<img[^>]*\ssrc=["']([^"']+)["']/g)]
+          .map((m) => m[1] ?? m[2])
+          .filter((u) => !/^([a-z]+:)?\/\//i.test(u))
+          .map((u) => decodeURI(new URL(u, `file:///${d.file}`).pathname.slice(1))),
+      ]),
+    );
+    const missing = getAssetFiles()
+      .filter((f) => /\.(svg|png|jpe?g|webp|gif)$/i.test(f) && !/\/mentorconnect_/.test(f))
+      .filter((f) => !onPages.has(f));
+    expect(missing).toEqual([]);
+  });
+
+  it("gives image-only folders their own page", () => {
+    const auth = docs.find((d) => d.slug === "client-side-security/authentication-security");
+    expect(auth?.images.length).toBe(3);
+  });
+
   it("never exposes files from the app itself or git as assets", () => {
     expect(getAssetFiles().some((f) => /^(website|\.git|\.claude)\//.test(f))).toBe(false);
   });

@@ -10,6 +10,9 @@ export const CONTENT_ROOT = path.resolve(
 // Files under these folders may be served at /content/* (images, visualizations).
 const ASSET_EXT = new Set([".svg", ".png", ".jpg", ".jpeg", ".webp", ".gif", ".html"]);
 const SKIP_DIRS = new Set(["website", "node_modules", ".git", ".claude", ".vscode"]);
+const IMAGE_EXT = /\.(svg|png|jpe?g|webp|gif)$/i;
+// Unrelated files that live next to the notes and shouldn't be auto-placed on a page.
+const IGNORED_IMAGES = [/\/mentorconnect_[^/]*$/];
 
 export type Doc = {
   slug: string; // e.g. "client-side-security/xss-vulnerabilities/dom-based-xss"
@@ -21,6 +24,7 @@ export type Doc = {
   group?: string; // sub-folder title inside a section
   body: string;
   visualizations: string[]; // repo-relative .html files to embed
+  images: string[]; // repo-relative images not already in the body, shown after it
 };
 
 export type Category = { slug: string; title: string; docs: Doc[] };
@@ -39,8 +43,11 @@ const titleize = (s: string) =>
     .replace(/\b(xss|csp|csrf|cors|https|hsts|sql|ssrf|api|llm|nosql)\b/gi, (m) => m.toUpperCase())
     .replace(/\b\w/g, (c) => c.toUpperCase());
 
-function toDoc(rel: string, category: string, categorySlug: string): Doc {
-  const raw = fs.readFileSync(/*turbopackIgnore: true*/ path.join(/*turbopackIgnore: true*/ CONTENT_ROOT, rel), "utf8").replace(/\r\n/g, "\n");
+/** `virtual` = a folder that has images but no notes; it gets a page so its diagrams still show. */
+function toDoc(rel: string, category: string, categorySlug: string, virtual = false): Doc {
+  const raw = virtual
+    ? ""
+    : fs.readFileSync(/*turbopackIgnore: true*/ path.join(/*turbopackIgnore: true*/ CONTENT_ROOT, rel), "utf8").replace(/\r\n/g, "\n");
   const parts = rel.split("/");
   const isReadme = /^readme\.md$/i.test(parts.at(-1)!);
   const dirParts = parts.slice(0, -1);
@@ -83,18 +90,21 @@ function toDoc(rel: string, category: string, categorySlug: string): Doc {
     group: dirParts.length > 1 ? titleize(dirParts[1]) : undefined,
     body,
     visualizations,
+    images: [],
   };
 }
 
-function walkMd(relDir: string): string[] {
-  const out: string[] = [];
+function walkMd(relDir: string): [rel: string, virtual: boolean][] {
+  const out: [string, boolean][] = [];
   const entries = fs
     .readdirSync(/*turbopackIgnore: true*/ path.join(/*turbopackIgnore: true*/ CONTENT_ROOT, relDir), { withFileTypes: true })
     .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
   // README first, then loose files, then sub-folders.
   const files = entries.filter((e) => e.isFile() && e.name.endsWith(".md"));
   files.sort((a, b) => Number(/^readme/i.test(b.name)) - Number(/^readme/i.test(a.name)));
-  for (const f of files) out.push(`${relDir}/${f.name}`);
+  for (const f of files) out.push([`${relDir}/${f.name}`, false]);
+  if (!files.length && entries.some((e) => e.isFile() && IMAGE_EXT.test(e.name)))
+    out.push([`${relDir}/README.md`, true]);
   for (const d of entries.filter((e) => e.isDirectory())) out.push(...walkMd(`${relDir}/${d.name}`));
   return out;
 }
@@ -112,13 +122,61 @@ export function getCategories(): Category[] {
   cache = sections.map((dir) => {
     const title = titleize(dir);
     const slug = slugify(dir);
-    const docs = walkMd(dir).map((rel) => toDoc(rel, title, slug));
+    const docs = walkMd(dir).map(([rel, virtual]) => toDoc(rel, title, slug, virtual));
     if (dir.startsWith("01_") && fs.existsSync(/*turbopackIgnore: true*/ path.join(/*turbopackIgnore: true*/ CONTENT_ROOT, "README.md"))) {
       docs.unshift({ ...toDoc("README.md", title, slug), title: "Overview", slug: "overview" });
     }
     return { slug, title, docs };
   });
+  placeImages(cache.flatMap((c) => c.docs));
   return cache;
+}
+
+const tokens = (name: string) =>
+  path.posix
+    .basename(name)
+    .replace(/\.[^.]+$/, "")
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((t) => t && t !== "vs");
+
+/** Repo-relative images a doc's markdown already shows (`![](x)` and `<img src="x">`). */
+function imagesInBody(doc: Doc): string[] {
+  const dir = path.posix.dirname(doc.file);
+  return [...doc.body.matchAll(/!\[[^\]]*\]\(\s*<?([^)\s>]+)|<img[^>]*\ssrc=["']([^"']+)["']/g)]
+    .map((m) => m[1] ?? m[2])
+    .filter((u) => !/^([a-z]+:)?\/\//i.test(u) && !u.startsWith("/"))
+    .map((u) => path.posix.normalize(path.posix.join(dir, decodeURI(u))));
+}
+
+/**
+ * Make sure every image in the repo shows up on a page:
+ * - an image whose name matches a doc's file name (validation.svg → validation-vs-…-escaping.md) also goes on that doc;
+ * - an image no markdown references goes on the nearest doc in its folder (or a parent folder).
+ */
+function placeImages(docs: Doc[]) {
+  const shown = new Map(docs.map((d) => [d, new Set(imagesInBody(d))]));
+  const referenced = new Set([...shown.values()].flatMap((s) => [...s]));
+  const images = getAssetFiles().filter((f) => IMAGE_EXT.test(f) && !IGNORED_IMAGES.some((r) => r.test("/" + f)));
+
+  for (const img of images) {
+    const t = tokens(img);
+    const byName = docs.filter((d) => {
+      const dt = new Set(tokens(d.file === "README.md" ? "overview" : d.file));
+      return t.length > 0 && t.every((x) => dt.has(x));
+    });
+    const targets = new Set(byName);
+    if (!referenced.has(img) && !targets.size) {
+      // Walk up from the image's folder to the closest folder with a doc; prefer its README.
+      for (let dir = path.posix.dirname(img); ; dir = path.posix.dirname(dir)) {
+        const inDir = docs.filter((d) => path.posix.dirname(d.file) === dir);
+        const pick = inDir.find((d) => /readme\.md$/i.test(d.file)) ?? inDir[0];
+        if (pick) { targets.add(pick); break; }
+        if (dir === ".") break;
+      }
+    }
+    for (const d of targets) if (!shown.get(d)!.has(img)) d.images.push(img);
+  }
 }
 
 export const getAllDocs = () => getCategories().flatMap((c) => c.docs);
